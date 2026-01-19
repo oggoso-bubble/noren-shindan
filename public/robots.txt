@@ -1,0 +1,17 @@
+# robots.txt for noren-shindan.jp
+# https://noren-shindan.jp/robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://noren-shindan.jp/sitemap.xml
+
+# Crawl-delay (optional, for polite crawling)
+Crawl-delay: 1
+
+# Block unnecessary paths (add as needed)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
