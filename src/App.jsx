@@ -720,21 +720,21 @@ const Footer = () => {
             </div>
             <nav className="flex gap-6 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
               <button 
-                onClick={() => setShowModal('privacy')}
-                className="hover:text-white transition-colors"
-              >
-                プライバシーポリシー
-              </button>
-              <button 
                 onClick={() => setShowModal('terms')}
                 className="hover:text-white transition-colors"
               >
                 利用規約
               </button>
+              <button 
+                onClick={() => setShowModal('privacy')}
+                className="hover:text-white transition-colors"
+              >
+                プライバシーポリシー
+              </button>
             </nav>
           </div>
           <div className="mt-8 pt-8 border-t border-white/10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            &copy; 2025 のれん診断 All rights reserved.
+            &copy; 2025 のれん診断運営事務局 All rights reserved.
           </div>
         </div>
       </footer>
@@ -747,12 +747,12 @@ const Footer = () => {
           onClick={closeModal}
         >
           <div 
-            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8"
+            className="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6 md:p-8"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b border-gray-200">
               <h2 
-                className="text-2xl font-bold"
+                className="text-xl md:text-2xl font-bold"
                 style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
               >
                 {showModal === 'privacy' ? 'プライバシーポリシー' : '利用規約'}
@@ -769,50 +769,177 @@ const Footer = () => {
               </button>
             </div>
             
-            {showModal === 'privacy' && (
-              <div className="space-y-4 text-sm" style={{ color: COLORS.gray700 }}>
+            {showModal === 'terms' && (
+              <div className="space-y-4 text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
                 <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
                 
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>1. 基本方針</h3>
-                <p>のれん診断（以下「当サービス」）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>2. 収集する情報</h3>
-                <p>当サービスは、診断に入力された財務情報等のデータを<strong>サーバーに送信・保存しません</strong>。すべての計算処理はユーザーのブラウザ内でのみ行われます。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>3. アクセス解析</h3>
-                <p>当サービスでは、サービス改善のためにGoogle Analytics等のアクセス解析ツールを使用する場合があります。これらのツールでは、Cookieを使用して匿名の利用状況データを収集することがありますが、個人を特定する情報は収集しません。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>4. 第三者への提供</h3>
-                <p>当サービスは、ユーザーの個人情報を第三者に提供、販売、貸与することはありません。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>5. お問い合わせ</h3>
-                <p>プライバシーポリシーに関するお問い合わせは、サービス提供者までご連絡ください。</p>
+                <p>本利用規約（以下「本規約」）は、のれん診断運営事務局（以下「当方」）が提供する「のれん診断」（以下「本サービス」）の利用条件を定めるものです。<strong>本サービスをご利用いただいた時点で、本規約に同意したものとみなします。</strong>本規約に同意いただけない場合は、本サービスを利用しないでください。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第1条（サービス内容）</h3>
+                <p>本サービスは、飲食店のM&A（合併・買収）における売却価格の目安を算出することを目的としたWebアプリケーションです。DCF法、時価純資産法、マルチプル法等の一般的な企業価値評価手法を用いて、ユーザーが入力した情報に基づき参考価格を提示します。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第2条（利用料金）</h3>
+                <p>本サービスは現在、無料で提供しています。ただし、当方は、事前の予告なく、将来的に料金体系を変更する権利を留保します。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第3条（禁止事項）</h3>
+                <p>ユーザーは、本サービスの利用にあたり、以下の行為を行ってはなりません。</p>
+                <ol className="list-decimal pl-6 space-y-1">
+                  <li>法令または公序良俗に違反する行為</li>
+                  <li>犯罪行為に関連する行為</li>
+                  <li>本サービスのサーバーやネットワークに過度な負荷をかける行為</li>
+                  <li>本サービスの運営を妨害する行為</li>
+                  <li>第三者の著作権、商標権、プライバシー権その他の権利を侵害する行為</li>
+                  <li>本サービスを不正に利用する行為</li>
+                  <li>本サービスの逆コンパイル、リバースエンジニアリング等の行為</li>
+                  <li>自動化されたツール（ボット等）を用いて本サービスにアクセスする行為</li>
+                  <li>本サービスを商業目的で再配布、転売する行為</li>
+                  <li>虚偽の情報を入力する行為</li>
+                  <li>その他、当方が不適切と判断する行為</li>
+                </ol>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第4条（免責事項）</h3>
+                <div className="p-4 rounded-lg my-4" style={{ backgroundColor: COLORS.yellowLight, border: `1px solid ${COLORS.yellow}` }}>
+                  <p className="font-bold" style={{ color: COLORS.navyDark }}>⚠️ 重要：以下の免責事項を必ずお読みください</p>
+                  <p className="mt-2">本サービスを利用する前に、以下の免責事項を十分にご理解ください。本サービスの利用をもって、これらの免責事項に同意したものとみなします。</p>
+                </div>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-1. 診断結果について</h4>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>本サービスが提供する診断結果、評価額、分析データ等は、すべて<strong>参考情報</strong>であり、その正確性、完全性、有用性、適時性、信頼性を一切保証しません。</li>
+                  <li><strong>本サービスは、飲食店の売却価格を保証するものではありません。</strong></li>
+                  <li><strong>本サービスは、M&A取引の成立を保証するものではありません。</strong></li>
+                  <li>診断結果は、実際のM&A取引における買い手の評価、デューデリジェンス結果、市場環境等により大幅に異なる場合があります。</li>
+                  <li>診断に使用する評価手法（DCF法、時価純資産法、マルチプル法等）は一般的な手法であり、個別の事情を考慮した精密な評価ではありません。</li>
+                </ul>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-2. 専門的助言の否定</h4>
+                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: COLORS.gray100 }}>
+                  <p className="font-bold" style={{ color: COLORS.navyDark }}>⚠️ 本サービスは専門的助言を提供するものではありません</p>
+                </div>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>本サービスは、<strong>M&Aアドバイザリー、財務アドバイス、投資助言、税務相談、法律相談、会計監査その他の専門的助言を提供するものではありません。</strong></li>
+                  <li>実際のM&A取引を行う際は、必ずM&A仲介会社、公認会計士、税理士、弁護士等の資格を持った専門家にご相談ください。</li>
+                  <li>本サービスの診断結果のみに基づいて重要な意思決定を行わないでください。</li>
+                </ul>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-3. 損害賠償の免責</h4>
+                <p><strong>当方の故意または重大な過失による場合を除き</strong>、本サービスの利用または利用不能により生じた<strong>いかなる損害</strong>についても、当方は<strong>一切の責任を負いません</strong>。</p>
+                <p className="mt-2">免責される損害には、以下を含みますが、これらに限定されません：</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>直接損害、間接損害、特別損害、付随的損害、派生的損害、結果的損害、懲罰的損害</li>
+                  <li>逸失利益、事業機会の損失、収入の損失</li>
+                  <li>データの損失、破損、漏洩</li>
+                  <li><strong>M&A取引の不成立、売却価格の低下</strong></li>
+                  <li><strong>診断結果と実際の売却価格との乖離</strong></li>
+                  <li><strong>本サービスの診断結果を信頼して行動したことによる損害</strong></li>
+                  <li>精神的苦痛、名誉の毀損</li>
+                  <li>第三者からの請求に基づく損害</li>
+                </ul>
+                <p className="mt-2">本サービスの利用に関連して、ユーザーと第三者との間で紛争が生じた場合、ユーザーは自己の責任と費用で解決するものとし、当方は一切の責任を負いません。</p>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-4. 賠償上限</h4>
+                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: COLORS.gray100 }}>
+                  <p><strong>万が一、前項の定めにかかわらず当方が損害賠償責任を負う場合であっても、当方の賠償責任は、本サービスが無料で提供されていることに鑑み、金0円を上限とします。</strong></p>
+                </div>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-5. サービス提供について</h4>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>当方は、本サービスの内容を予告なく変更、追加、削除することがあります。</li>
+                  <li><strong>当方は、理由の如何を問わず、いつでも、事前の予告なく、本サービスの全部または一部を停止・中断・終了することができます。</strong>これによりユーザーに生じた損害について、当方は責任を負いません。</li>
+                  <li>システム障害、天災、その他不可抗力によりサービスが利用できない場合、当方は責任を負いません。</li>
+                </ul>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第5条（ユーザーの責任および補償）</h3>
+                <p><strong>ユーザーは、自己の責任において本サービスを利用するものとします。</strong></p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>本サービスの利用に関連してユーザーに生じた損害は、すべてユーザー自身が負担するものとします。</li>
+                  <li>ユーザーが本規約に違反し、または不正もしくは違法な行為により、当方または第三者に損害を与えた場合、ユーザーは当方および第三者に対し、その損害（弁護士費用、訴訟費用を含む）を賠償する責任を負います。</li>
+                </ul>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第6条（知的財産権）</h3>
+                <p>本サービスに関する著作権、商標権その他の知的財産権は、当方または正当な権利者に帰属します。ユーザーは、本サービスを通じて提供されるコンテンツを、私的利用の範囲を超えて複製、転載、改変、販売、公衆送信等することはできません。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第7条（利用制限および終了）</h3>
+                <p>当方は、ユーザーが本規約に違反した場合、または本サービスの運営上必要と判断した場合、<strong>事前の通知なく、理由を開示することなく</strong>、ユーザーの利用を制限または停止することができます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第8条（規約の変更）</h3>
+                <p>当方は、必要に応じて、ユーザーへの事前の通知なく、本規約を変更することがあります。変更後の規約は、本サービス上に掲載した時点で効力を生じるものとします。本サービスの利用を継続した場合、変更後の規約に同意したものとみなします。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第9条（分離可能性）</h3>
+                <p>本規約のいずれかの条項が法令等により無効または執行不能と判断された場合であっても、当該条項以外の本規約の各条項は、引き続き完全に効力を有するものとします。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第10条（準拠法および管轄）</h3>
+                <p>本規約の解釈および適用は日本法に準拠します。本サービスに関連して紛争が生じた場合、<strong>長野地方裁判所</strong>を第一審の専属的合意管轄裁判所とします。</p>
               </div>
             )}
             
-            {showModal === 'terms' && (
-              <div className="space-y-4 text-sm" style={{ color: COLORS.gray700 }}>
+            {showModal === 'privacy' && (
+              <div className="space-y-4 text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
                 <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
                 
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>1. サービスの目的</h3>
-                <p>当サービスは、飲食店の売却価格の目安を算出するための無料診断ツールです。診断結果は参考値であり、実際の売却価格を保証するものではありません。</p>
+                <p>のれん診断運営事務局（以下「当方」）は、本サービスにおけるユーザーの情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第1条（基本方針）</h3>
+                <p>当方は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第2条（取得する情報）</h3>
                 
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>2. 免責事項</h3>
-                <p>当サービスの診断結果は、一般的な評価手法に基づく概算であり、以下の点についてご了承ください。</p>
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-1. 診断入力データについて</h4>
+                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: '#d4edda', border: '1px solid #28a745' }}>
+                  <p><strong>✓ 安心ポイント：</strong>ユーザーが診断に入力した財務情報（年商、営業利益、従業員数等）は、<strong>当方のサーバーに送信・保存されません</strong>。すべての計算処理はユーザーのブラウザ内でのみ行われます。</p>
+                </div>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-2. 自動的に取得する情報</h4>
+                <p>サービス改善のため、以下の匿名化された情報を収集する場合があります：</p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>実際の売却価格は、市場状況、買い手との交渉、詳細なデューデリジェンス等により大きく異なる場合があります。</li>
-                  <li>当サービスの利用により生じた損害について、運営者は一切の責任を負いません。</li>
-                  <li>正確な評価が必要な場合は、M&A専門家や公認会計士等の専門家にご相談ください。</li>
+                  <li>アクセス日時、利用時間帯</li>
+                  <li>デバイス種別、ブラウザ種別</li>
+                  <li>参照元URL</li>
+                  <li>ページ閲覧履歴</li>
                 </ul>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>3. 知的財産権</h3>
-                <p>当サービスに関する著作権その他の知的財産権は、運営者に帰属します。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>4. 利用規約の変更</h3>
-                <p>運営者は、必要に応じて本規約を変更することがあります。変更後の規約は、当サービス上に掲載した時点で効力を生じるものとします。</p>
-                
-                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>5. 準拠法・管轄裁判所</h3>
-                <p>本規約の解釈および適用は日本法に準拠し、当サービスに関する紛争については、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</p>
+                <p className="mt-2">これらの情報は個人を特定するものではありません。</p>
+
+                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-3. ブラウザに保存される情報</h4>
+                <p>診断結果等のデータは、ユーザーのブラウザ（localStorage）に一時的に保存される場合があります。これらのデータは当方のサーバーには送信されません。ブラウザのデータ消去により削除されます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第3条（利用目的）</h3>
+                <p>取得した情報は、以下の目的で利用します。</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>本サービスの提供、維持、改善</li>
+                  <li>統計データの作成（個人を特定しない形式）</li>
+                  <li>不正利用の防止</li>
+                </ul>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第4条（アクセス解析ツール）</h3>
+                <p>当サービスでは、サービス改善のためにGoogle Analytics等のアクセス解析ツールを使用する場合があります。</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>これらのツールでは、Cookieを使用して匿名の利用状況データを収集することがあります。</li>
+                  <li>収集されるデータに個人を特定する情報は含まれません。</li>
+                  <li>Google Analyticsの利用規約およびプライバシーポリシーについては、Google社のウェブサイトでご確認ください。</li>
+                </ul>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第5条（第三者への提供）</h3>
+                <p>当方は、法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供、販売、貸与することはありません。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第6条（データの保存期間）</h3>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>統計情報：サービス運営に必要な期間</li>
+                  <li>ブラウザに保存されるデータ：ユーザーが削除するまで</li>
+                </ul>
+                <p className="mt-2">上記の情報は、保存目的を達成した後、または本サービスの終了後、合理的な期間内に削除します。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第7条（安全管理措置）</h3>
+                <p>当方は、取得した情報の漏洩、滅失、毀損の防止その他の安全管理のために必要かつ適切な措置を講じます。ただし、インターネット上のデータ送信について、完全なセキュリティを保証することはできません。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第8条（ユーザーの権利）</h3>
+                <p>ユーザーは、ブラウザの設定からlocalStorageを消去することで、本サービスに保存されたデータを削除できます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第9条（プライバシーポリシーの変更）</h3>
+                <p>当方は、必要に応じて本プライバシーポリシーを変更することがあります。変更後のポリシーは、本サービス上に掲載した時点で効力を生じます。</p>
+
+                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第10条（お問い合わせ）</h3>
+                <p><strong>運営者：</strong>のれん診断運営事務局</p>
+                <p className="mt-2 text-xs" style={{ color: COLORS.gray500 }}>※ 個別のお問い合わせへの回答にはお時間をいただく場合があります。また、すべてのお問い合わせに回答できない場合があります。</p>
               </div>
             )}
             
