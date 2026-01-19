@@ -377,10 +377,14 @@ const SEOHead = () => {
 // ========================================
 // Header Component（ロゴ画像対応）
 // ========================================
-const Header = () => (
+const Header = ({ onGoHome }) => (
   <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
     <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-      <a href="#" className="flex items-center gap-3">
+      <button 
+        onClick={onGoHome}
+        className="flex items-center gap-3 cursor-pointer"
+        aria-label="トップページに戻る"
+      >
         {/* ロゴ画像を表示（画像がない場合はテキストロゴ） */}
         <img 
           src={LOGO_URL} 
@@ -408,11 +412,32 @@ const Header = () => (
             </div>
           </div>
         </div>
-      </a>
+      </button>
       <nav className="hidden md:flex items-center gap-8 text-sm" style={{ color: COLORS.gray600 }}>
-        <a href="#about" className="hover:opacity-70 transition-opacity">診断について</a>
-        <a href="#flow" className="hover:opacity-70 transition-opacity">診断の流れ</a>
-        <a href="#faq" className="hover:opacity-70 transition-opacity">よくある質問</a>
+        <button 
+          onClick={() => {
+            onGoHome();
+            setTimeout(() => {
+              const el = document.getElementById('about');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+          className="hover:opacity-70 transition-opacity"
+        >
+          診断について
+        </button>
+        <button 
+          onClick={() => {
+            onGoHome();
+            setTimeout(() => {
+              const el = document.getElementById('faq');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+          className="hover:opacity-70 transition-opacity"
+        >
+          よくある質問
+        </button>
       </nav>
     </div>
   </header>
@@ -485,9 +510,23 @@ const DiagnosisTypeSection = ({ onSelectType }) => (
       >
         診断タイプを選択
       </h2>
-      <p className="text-center mb-12" style={{ color: COLORS.gray600 }}>
+      <p className="text-center mb-6" style={{ color: COLORS.gray600 }}>
         目的に合わせて、2つの診断タイプからお選びください
       </p>
+      
+      {/* プライバシー保護の注記 */}
+      <div 
+        className="flex items-center justify-center gap-2 mb-12 px-4 py-3 rounded-lg mx-auto max-w-xl"
+        style={{ backgroundColor: COLORS.gray100 }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span className="text-sm" style={{ color: COLORS.gray700 }}>
+          <strong>安心してご利用ください：</strong>入力データはサーバーに送信されず、お使いのブラウザ内でのみ処理されます。
+        </span>
+      </div>
       
       <div className="grid md:grid-cols-2 gap-8">
         {/* 簡易診断 */}
@@ -658,33 +697,138 @@ const FAQSection = () => (
 );
 
 // ========================================
-// Footer
+// Footer with Modal Links
 // ========================================
-const Footer = () => (
-  <footer className="py-12 px-6" style={{ backgroundColor: COLORS.navyDark }}>
-    <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-8 h-8 rounded flex items-center justify-center text-white font-bold"
-            style={{ backgroundColor: COLORS.navy }}
-          >
-            暖
+const Footer = () => {
+  const [showModal, setShowModal] = useState(null);
+
+  const closeModal = () => setShowModal(null);
+
+  return (
+    <>
+      <footer className="py-12 px-6" style={{ backgroundColor: COLORS.navyDark }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-8 h-8 rounded flex items-center justify-center text-white font-bold"
+                style={{ backgroundColor: COLORS.navy }}
+              >
+                暖
+              </div>
+              <span className="text-white font-medium">のれん診断</span>
+            </div>
+            <nav className="flex gap-6 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              <button 
+                onClick={() => setShowModal('privacy')}
+                className="hover:text-white transition-colors"
+              >
+                プライバシーポリシー
+              </button>
+              <button 
+                onClick={() => setShowModal('terms')}
+                className="hover:text-white transition-colors"
+              >
+                利用規約
+              </button>
+            </nav>
           </div>
-          <span className="text-white font-medium">のれん診断</span>
+          <div className="mt-8 pt-8 border-t border-white/10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            &copy; 2025 のれん診断 All rights reserved.
+          </div>
         </div>
-        <nav className="flex gap-6 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
-          <a href="#" className="hover:text-white transition-colors">プライバシーポリシー</a>
-          <a href="#" className="hover:text-white transition-colors">利用規約</a>
-          <a href="#" className="hover:text-white transition-colors">お問い合わせ</a>
-        </nav>
-      </div>
-      <div className="mt-8 pt-8 border-t border-white/10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-        &copy; 2025 のれん診断 All rights reserved.
-      </div>
-    </div>
-  </footer>
-);
+      </footer>
+
+      {/* モーダル */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={closeModal}
+        >
+          <div 
+            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 
+                className="text-2xl font-bold"
+                style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
+              >
+                {showModal === 'privacy' ? 'プライバシーポリシー' : '利用規約'}
+              </h2>
+              <button 
+                onClick={closeModal}
+                className="p-2 hover:opacity-70 transition-opacity"
+                aria-label="閉じる"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLORS.gray600} strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            {showModal === 'privacy' && (
+              <div className="space-y-4 text-sm" style={{ color: COLORS.gray700 }}>
+                <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>1. 基本方針</h3>
+                <p>のれん診断（以下「当サービス」）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>2. 収集する情報</h3>
+                <p>当サービスは、診断に入力された財務情報等のデータを<strong>サーバーに送信・保存しません</strong>。すべての計算処理はユーザーのブラウザ内でのみ行われます。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>3. アクセス解析</h3>
+                <p>当サービスでは、サービス改善のためにGoogle Analytics等のアクセス解析ツールを使用する場合があります。これらのツールでは、Cookieを使用して匿名の利用状況データを収集することがありますが、個人を特定する情報は収集しません。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>4. 第三者への提供</h3>
+                <p>当サービスは、ユーザーの個人情報を第三者に提供、販売、貸与することはありません。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>5. お問い合わせ</h3>
+                <p>プライバシーポリシーに関するお問い合わせは、サービス提供者までご連絡ください。</p>
+              </div>
+            )}
+            
+            {showModal === 'terms' && (
+              <div className="space-y-4 text-sm" style={{ color: COLORS.gray700 }}>
+                <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>1. サービスの目的</h3>
+                <p>当サービスは、飲食店の売却価格の目安を算出するための無料診断ツールです。診断結果は参考値であり、実際の売却価格を保証するものではありません。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>2. 免責事項</h3>
+                <p>当サービスの診断結果は、一般的な評価手法に基づく概算であり、以下の点についてご了承ください。</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>実際の売却価格は、市場状況、買い手との交渉、詳細なデューデリジェンス等により大きく異なる場合があります。</li>
+                  <li>当サービスの利用により生じた損害について、運営者は一切の責任を負いません。</li>
+                  <li>正確な評価が必要な場合は、M&A専門家や公認会計士等の専門家にご相談ください。</li>
+                </ul>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>3. 知的財産権</h3>
+                <p>当サービスに関する著作権その他の知的財産権は、運営者に帰属します。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>4. 利用規約の変更</h3>
+                <p>運営者は、必要に応じて本規約を変更することがあります。変更後の規約は、当サービス上に掲載した時点で効力を生じるものとします。</p>
+                
+                <h3 className="font-bold mt-6" style={{ color: COLORS.navyDark }}>5. 準拠法・管轄裁判所</h3>
+                <p>本規約の解釈および適用は日本法に準拠し、当サービスに関する紛争については、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</p>
+              </div>
+            )}
+            
+            <button
+              onClick={closeModal}
+              className="mt-8 w-full py-3 rounded font-medium transition-all duration-200"
+              style={{ backgroundColor: COLORS.navy, color: COLORS.white }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // ========================================
 // 簡易診断コンポーネント
@@ -1524,7 +1668,7 @@ const NorenDiagnosis = () => {
   return (
     <div className="font-sans antialiased">
       <SEOHead />
-      <Header />
+      <Header onGoHome={handleRestart} />
       
       {view === 'landing' && (
         <>
@@ -1539,6 +1683,7 @@ const NorenDiagnosis = () => {
         <>
           <div className="pt-20" />
           <DiagnosisTypeSection onSelectType={handleSelectType} />
+          <Footer />
         </>
       )}
       
