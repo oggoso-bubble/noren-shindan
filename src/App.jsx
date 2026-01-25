@@ -1,1163 +1,791 @@
 import React, { useState, useEffect } from 'react';
 
 // ========================================
-// のれん診断 LP + 診断ツール v5
-// 改善内容:
-// 1. 業態を7つに拡張
-// 2. 複数店舗の入力対処改善
-// 3. 詳細診断で推定値使用時の注記
-// 4. ロゴ画像の表示
+// のれん診断 LP + 診断ツール v15
+// - ヘッダー：濃紺背景、「今すぐ無料診断」ボタン追加
+// - 上部バッジ削除
+// - メインコピー大きく左配置、右にPCイラスト
+// - 金額9,250万円、月桂樹デザイン改善
+// - 選ばれる理由：アウトラインイラスト
+// - 利用者の声：線画スタイル人物
+// - Note紹介：サムネイル画像使用
+// - サービス概要削除、運営情報削除
+// - 詳細診断：クイック選択肢大幅増加
 // ========================================
 
-// カラー定義
 const COLORS = {
-  navy: '#1a365d',
-  navyLight: '#2c5282',
-  navyDark: '#0f2444',
-  red: '#c53030',
-  redHover: '#9b2c2c',
-  gray50: '#f9fafb',
-  gray100: '#f3f4f6',
-  gray200: '#e5e7eb',
-  gray300: '#d1d5db',
-  gray400: '#9ca3af',
-  gray500: '#6b7280',
-  gray600: '#4b5563',
-  gray700: '#374151',
-  gray800: '#1f2937',
+  primary: '#1a365d',
+  primaryDark: '#0f172a',
+  headerBg: '#1e293b',
+  accent: '#2563eb',
+  accentLight: '#3b82f6',
+  cta: '#dc2626',
+  ctaHover: '#b91c1c',
+  success: '#059669',
+  successLight: '#10b981',
+  successBg: '#ecfdf5',
+  warning: '#d97706',
+  warningBg: '#fffbeb',
+  gray50: '#f8fafc',
+  gray100: '#f1f5f9',
+  gray200: '#e2e8f0',
+  gray300: '#cbd5e1',
+  gray400: '#94a3b8',
+  gray500: '#64748b',
+  gray600: '#475569',
+  gray700: '#334155',
+  gray800: '#1e293b',
+  gray900: '#0f172a',
   white: '#ffffff',
-  yellow: '#fbbf24',
-  yellowLight: '#fef3c7',
 };
 
-// ロゴ画像URL（実際のデプロイ時は適切なパスに変更）
 const LOGO_URL = '/images/logo.png';
+const NOTE_THUMBNAIL_URL = 'https://assets.st-note.com/production/uploads/images/161972305/rectangle_large_type_2_7c8e3e7e1998d6dbf5b1e4f37a8d5d0e.png';
 
 // ========================================
-// SEO Component - 完全版
+// ErrorBoundary
+// ========================================
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">エラーが発生しました</h2>
+            <button onClick={() => window.location.reload()} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium">再読み込み</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ========================================
+// SEO
 // ========================================
 const SEOHead = () => {
   useEffect(() => {
-    // ===== タイトル =====
-    document.title = '飲食店M&A売却価格診断｜のれん診断 - 無料で今すぐ査定';
-    
-    // ===== メタタグ設定ヘルパー =====
+    document.title = '飲食店の売却価格を無料診断｜のれん診断 - 最短60秒で査定完了';
     const setMeta = (name, content, property = false) => {
       const attr = property ? 'property' : 'name';
       let meta = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.setAttribute(attr, name);
-        document.head.appendChild(meta);
-      }
+      if (!meta) { meta = document.createElement('meta'); meta.setAttribute(attr, name); document.head.appendChild(meta); }
       meta.content = content;
     };
-
-    const setLink = (rel, href, extra = {}) => {
-      let link = document.querySelector(`link[rel="${rel}"]${extra.hreflang ? `[hreflang="${extra.hreflang}"]` : ''}`);
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = rel;
-        document.head.appendChild(link);
-      }
-      link.href = href;
-      Object.keys(extra).forEach(key => link.setAttribute(key, extra[key]));
-    };
-
-    // ===== 基本メタタグ =====
-    setMeta('description', '【完全無料】飲食店の売却価格を今すぐ診断。DCF法・時価純資産法・マルチプル法の3つの専門的評価手法で、あなたのレストラン・居酒屋・カフェがいくらで売れるか算出。会員登録不要、約2分で診断完了。M&A・事業承継をお考えの飲食店オーナー様必見。');
-    setMeta('keywords', '飲食店 M&A,飲食店 売却,飲食店 売却価格,飲食店 査定,のれん代 計算,企業価値評価,レストラン 売却,居酒屋 売却,カフェ 売却,事業承継,店舗売却,飲食店 買取,M&A 仲介,DCF法,時価純資産法,マルチプル法,EBITDA,営業権,のれん代 相場,飲食店 廃業,事業譲渡,飲食店 バリュエーション,ラーメン店 売却,焼肉店 売却');
-    setMeta('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
-    setMeta('googlebot', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
-    setMeta('bingbot', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
-    setMeta('author', 'のれん診断');
-    setMeta('creator', 'のれん診断');
-    setMeta('publisher', 'のれん診断');
-    setMeta('copyright', 'のれん診断');
+    setMeta('description', '【完全無料・最短60秒】飲食店の売却価格をAIが即座に診断。累計1,500件以上の実績。会員登録不要。');
     setMeta('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=5.0');
-    setMeta('theme-color', '#1a365d');
-    setMeta('color-scheme', 'light');
-    setMeta('format-detection', 'telephone=no, email=no, address=no');
-    setMeta('referrer', 'origin-when-cross-origin');
-
-    // ===== モバイル・PWA対応 =====
-    setMeta('mobile-web-app-capable', 'yes');
-    setMeta('apple-mobile-web-app-capable', 'yes');
-    setMeta('apple-mobile-web-app-status-bar-style', 'default');
-    setMeta('apple-mobile-web-app-title', 'のれん診断');
-    setMeta('application-name', 'のれん診断');
-    setMeta('msapplication-TileColor', '#1a365d');
-    setMeta('msapplication-config', '/browserconfig.xml');
-
-    // ===== Canonical & hreflang =====
-    setLink('canonical', 'https://noren-shindan.jp/');
-    setLink('alternate', 'https://noren-shindan.jp/', { hreflang: 'ja' });
-    setLink('alternate', 'https://noren-shindan.jp/', { hreflang: 'x-default' });
-
-    // ===== Preconnect & DNS Prefetch（パフォーマンス最適化） =====
-    setLink('preconnect', 'https://fonts.googleapis.com');
-    setLink('preconnect', 'https://fonts.gstatic.com', { crossorigin: '' });
-    setLink('dns-prefetch', 'https://www.google-analytics.com');
-    setLink('dns-prefetch', 'https://www.googletagmanager.com');
-
-    // ===== Open Graph Protocol（詳細版） =====
-    setMeta('og:title', '飲食店M&A売却価格診断｜のれん診断 - 無料で今すぐ査定', true);
-    setMeta('og:description', '【完全無料】飲食店の売却価格を今すぐ診断。DCF法・時価純資産法・マルチプル法の3つの専門的評価手法で、あなたの店舗がいくらで売れるか算出します。', true);
-    setMeta('og:type', 'website', true);
-    setMeta('og:url', 'https://noren-shindan.jp/', true);
-    setMeta('og:site_name', 'のれん診断', true);
-    setMeta('og:locale', 'ja_JP', true);
-    setMeta('og:image', 'https://noren-shindan.jp/ogp.png', true);
-    setMeta('og:image:secure_url', 'https://noren-shindan.jp/ogp.png', true);
-    setMeta('og:image:type', 'image/png', true);
-    setMeta('og:image:width', '1200', true);
-    setMeta('og:image:height', '630', true);
-    setMeta('og:image:alt', '飲食店M&A売却価格診断 のれん診断 - 無料で今すぐ査定', true);
-
-    // ===== Twitter Cards（詳細版） =====
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', '飲食店M&A売却価格診断｜のれん診断');
-    setMeta('twitter:description', '【完全無料】飲食店の売却価格を今すぐ診断。3つの専門的評価手法で査定。登録不要・約2分で完了。');
-    setMeta('twitter:image', 'https://noren-shindan.jp/ogp.png');
-    setMeta('twitter:image:alt', '飲食店M&A売却価格診断 のれん診断');
-    // Twitter アカウントがあれば以下を有効化
-    // setMeta('twitter:site', '@noren_shindan');
-    // setMeta('twitter:creator', '@noren_shindan');
-
-    // ===== 構造化データ（Schema.org） =====
-    const schemas = [
-      // 1. WebApplication
-      {
-        '@context': 'https://schema.org',
-        '@type': 'WebApplication',
-        '@id': 'https://noren-shindan.jp/#webapp',
-        name: 'のれん診断',
-        alternateName: '飲食店M&A売却価格診断',
-        description: '飲食店オーナー向けM&A売却価格診断ツール。DCF法・時価純資産法・マルチプル法の3つの評価手法で企業価値を算出。',
-        url: 'https://noren-shindan.jp/',
-        applicationCategory: 'BusinessApplication',
-        applicationSubCategory: 'FinanceApplication',
-        operatingSystem: 'All',
-        browserRequirements: 'Requires JavaScript',
-        softwareVersion: '1.0',
-        inLanguage: 'ja',
-        isAccessibleForFree: true,
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'JPY',
-          availability: 'https://schema.org/InStock'
-        },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.8',
-          ratingCount: '156',
-          bestRating: '5',
-          worstRating: '1'
-        },
-        featureList: [
-          'DCF法による企業価値評価',
-          '時価純資産法による評価',
-          'マルチプル法（EBITDA倍率）による評価',
-          '簡易診断（約1分）',
-          '詳細診断（約2分）',
-          '会員登録不要',
-          '完全無料'
-        ]
-      },
-      // 2. Organization
-      {
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        '@id': 'https://noren-shindan.jp/#organization',
-        name: 'のれん診断',
-        url: 'https://noren-shindan.jp/',
-        logo: {
-          '@type': 'ImageObject',
-          url: 'https://noren-shindan.jp/images/logo.png',
-          width: 200,
-          height: 60
-        },
-        sameAs: [
-          'https://note.com/kei_senpai'
-        ],
-        contactPoint: {
-          '@type': 'ContactPoint',
-          contactType: 'customer service',
-          availableLanguage: 'Japanese'
-        }
-      },
-      // 3. WebSite（サイト検索対応）
-      {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        '@id': 'https://noren-shindan.jp/#website',
-        name: 'のれん診断',
-        alternateName: '飲食店M&A売却価格診断',
-        url: 'https://noren-shindan.jp/',
-        inLanguage: 'ja',
-        publisher: {
-          '@id': 'https://noren-shindan.jp/#organization'
-        }
-      },
-      // 4. WebPage
-      {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': 'https://noren-shindan.jp/#webpage',
-        name: '飲食店M&A売却価格診断｜のれん診断',
-        description: '飲食店の売却価格を無料で診断。DCF法・時価純資産法・マルチプル法の3つの評価手法で査定。',
-        url: 'https://noren-shindan.jp/',
-        isPartOf: {
-          '@id': 'https://noren-shindan.jp/#website'
-        },
-        about: {
-          '@id': 'https://noren-shindan.jp/#webapp'
-        },
-        primaryImageOfPage: {
-          '@type': 'ImageObject',
-          url: 'https://noren-shindan.jp/ogp.png'
-        },
-        datePublished: '2025-01-01',
-        dateModified: new Date().toISOString().split('T')[0],
-        inLanguage: 'ja'
-      },
-      // 5. FAQPage（全FAQ項目）
-      {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        '@id': 'https://noren-shindan.jp/#faq',
-        mainEntity: [
-          {
-            '@type': 'Question',
-            name: '3つの評価手法とは何ですか？',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'DCF法（将来の収益を現在価値に割引）、時価純資産法（資産価値＋営業権）、マルチプル法（業界の売買倍率を適用）の3つです。それぞれ異なる視点から企業価値を算出し、総合的な評価額を導き出します。'
-            }
-          },
-          {
-            '@type': 'Question',
-            name: '診断は本当に無料ですか？',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'はい、のれん診断は完全無料でご利用いただけます。会員登録も不要で、今すぐ診断を始めることができます。'
-            }
-          },
-          {
-            '@type': 'Question',
-            name: '簡易診断と詳細診断の違いは何ですか？',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: '簡易診断は7つの選択式質問で概算価格を算出します。詳細診断は財務情報の実数入力により、DCF法・時価純資産法・マルチプル法の3手法を用いてより精密な診断結果をお出しします。'
-            }
-          },
-          {
-            '@type': 'Question',
-            name: '複数店舗を持っている場合はどう入力すればよいですか？',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: '各質問に「全店舗合計で」という注記がある項目は、全店舗の合計値でお答えください。営業年数は1号店を基準にお答えください。'
-            }
-          },
-          {
-            '@type': 'Question',
-            name: '入力した情報は保存されますか？',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'いいえ、入力いただいた情報はサーバーに保存されません。診断はすべてお使いのブラウザ上で完結し、個人情報が外部に送信されることはありません。'
-            }
-          }
-        ]
-      },
-      // 6. HowTo（診断の流れ）
-      {
-        '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        '@id': 'https://noren-shindan.jp/#howto',
-        name: '飲食店の売却価格を診断する方法',
-        description: 'のれん診断を使って飲食店の売却価格を診断する手順',
-        totalTime: 'PT2M',
-        estimatedCost: {
-          '@type': 'MonetaryAmount',
-          currency: 'JPY',
-          value: '0'
-        },
-        step: [
-          {
-            '@type': 'HowToStep',
-            position: 1,
-            name: '診断タイプを選択',
-            text: '簡易診断（約1分）または詳細診断（約2分）を選択します。'
-          },
-          {
-            '@type': 'HowToStep',
-            position: 2,
-            name: '質問に回答',
-            text: '年商、営業利益、店舗数などの質問に回答します。'
-          },
-          {
-            '@type': 'HowToStep',
-            position: 3,
-            name: '診断結果を確認',
-            text: '3つの評価手法による売却価格の目安が表示されます。'
-          }
-        ]
-      },
-      // 7. BreadcrumbList
-      {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: 'ホーム',
-            item: 'https://noren-shindan.jp/'
-          }
-        ]
-      },
-      // 8. Service
-      {
-        '@context': 'https://schema.org',
-        '@type': 'Service',
-        '@id': 'https://noren-shindan.jp/#service',
-        name: '飲食店M&A売却価格診断サービス',
-        description: '飲食店オーナー様向けの無料売却価格診断サービス。DCF法・時価純資産法・マルチプル法の3つの専門的評価手法で企業価値を算出します。',
-        provider: {
-          '@id': 'https://noren-shindan.jp/#organization'
-        },
-        serviceType: 'Business Valuation',
-        areaServed: {
-          '@type': 'Country',
-          name: 'Japan'
-        },
-        audience: {
-          '@type': 'Audience',
-          audienceType: '飲食店オーナー、事業承継を検討中の方、M&Aを検討中の方'
-        },
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'JPY'
-        }
-      }
-    ];
-    
-    // 既存のスキーマを削除して新しいものを追加
-    document.querySelectorAll('script[type="application/ld+json"]').forEach(el => el.remove());
-    
-    schemas.forEach((schema, index) => {
-      const script = document.createElement('script');
-      script.id = `schema-${index}`;
-      script.type = 'application/ld+json';
-      script.textContent = JSON.stringify(schema);
-      document.head.appendChild(script);
-    });
-
-    // ===== Google Analytics 4 プレースホルダー =====
-    // 実際のGA4 IDに置き換えてください
-    /*
-    const gtagScript = document.createElement('script');
-    gtagScript.async = true;
-    gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX';
-    document.head.appendChild(gtagScript);
-
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
-    */
-
   }, []);
-
   return null;
 };
 
 // ========================================
-// Header Component（ロゴ画像対応）
+// Header（濃紺背景 + 今すぐ無料診断ボタン）
 // ========================================
-const Header = ({ onGoHome }) => (
-  <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
-    <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-      <button 
-        onClick={onGoHome}
-        className="flex items-center gap-3 cursor-pointer"
-        aria-label="トップページに戻る"
-      >
-        {/* ロゴ画像を表示（画像がない場合はテキストロゴ） */}
-        <img 
-          src={LOGO_URL} 
-          alt="のれん診断" 
-          className="h-12 w-auto object-contain"
-          onError={(e) => {
-            // 画像読み込み失敗時はテキストロゴを表示
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'flex';
-          }}
-        />
-        <div className="hidden items-center gap-2" style={{ display: 'none' }}>
-          <div 
-            className="w-10 h-10 rounded flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: COLORS.navy }}
-          >
-            暖
-          </div>
-          <div>
-            <div className="text-lg font-bold tracking-wide" style={{ color: COLORS.navy, fontFamily: "'Noto Serif JP', serif" }}>
-              のれん診断
-            </div>
-            <div className="text-xs" style={{ color: COLORS.gray500 }}>
-              飲食店M&A売却価格診断
-            </div>
-          </div>
-        </div>
-      </button>
-      <nav className="hidden md:flex items-center gap-8 text-sm" style={{ color: COLORS.gray600 }}>
+const Header = ({ onStartDiagnosis, onLogoClick }) => (
+  <header className="fixed top-0 left-0 right-0 z-50 shadow-lg" style={{ backgroundColor: COLORS.headerBg }}>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      <a href="/" onClick={(e) => { e.preventDefault(); if (onLogoClick) onLogoClick(); }} className="flex items-center gap-2 cursor-pointer">
+        <img src={LOGO_URL} alt="のれん診断" className="h-8 sm:h-10 w-auto" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+        <span className="hidden text-lg font-bold text-white" style={{ display: 'none' }}>のれん診断</span>
+      </a>
+      <div className="flex items-center gap-4 sm:gap-6">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
+          <a href="#features" className="hover:text-white transition-colors">機能について</a>
+          <a href="#method" className="hover:text-white transition-colors">評価手法</a>
+        </nav>
         <button 
-          onClick={() => {
-            onGoHome();
-            setTimeout(() => {
-              const el = document.getElementById('about');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }}
-          className="hover:opacity-70 transition-opacity"
+          onClick={onStartDiagnosis}
+          className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-bold text-sm sm:text-base text-white transition-all hover:opacity-90"
+          style={{ backgroundColor: COLORS.accent }}
         >
-          診断について
+          今すぐ無料診断
         </button>
-        <button 
-          onClick={() => {
-            onGoHome();
-            setTimeout(() => {
-              const el = document.getElementById('faq');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }}
-          className="hover:opacity-70 transition-opacity"
-        >
-          よくある質問
-        </button>
-      </nav>
+      </div>
     </div>
   </header>
 );
 
 // ========================================
-// Hero Section
+// Hero Section（左にコピー大きく、右にPCイラスト）
 // ========================================
 const HeroSection = ({ onStartDiagnosis }) => (
-  <section className="pt-32 pb-20 px-6" style={{ backgroundColor: COLORS.gray50 }}>
-    <div className="max-w-4xl mx-auto text-center">
-      <p className="text-sm tracking-widest mb-4" style={{ color: COLORS.navy }}>
-        Restaurant M&amp;A Valuation
-      </p>
-      <h1 
-        className="text-4xl md:text-5xl font-bold leading-tight mb-6"
-        style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-      >
-        飲食店の売却価格を<br />無料で診断
-      </h1>
-      <p className="text-lg mb-8 leading-relaxed" style={{ color: COLORS.gray600 }}>
-        DCF法・時価純資産法・マルチプル法の3つの専門的評価手法で、<br className="hidden md:block" />
-        あなたの店舗がいくらで売れるかがわかります。
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-        <button
-          onClick={onStartDiagnosis}
-          className="px-8 py-4 rounded font-medium text-lg transition-all duration-200 hover:scale-105"
-          style={{ backgroundColor: COLORS.red, color: COLORS.white }}
-        >
-          今すぐ無料診断を始める
-        </button>
-      </div>
-      <div className="flex flex-wrap justify-center gap-6 text-sm" style={{ color: COLORS.gray500 }}>
-        <span className="flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          会員登録不要
-        </span>
-        <span className="flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          約2分で完了
-        </span>
-        <span className="flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          完全無料
-        </span>
-      </div>
+  <section className="relative pt-14 sm:pt-16 min-h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f0f9ff 30%, #e0f2fe 70%, #dbeafe 100%)' }}>
+    {/* 背景装飾 */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-10 right-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, #93c5fd 0%, transparent 70%)' }} />
+      <div className="absolute bottom-20 left-0 w-48 sm:w-72 h-48 sm:h-72 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #86efac 0%, transparent 70%)' }} />
     </div>
-  </section>
-);
 
-// ========================================
-// Diagnosis Type Selection
-// ========================================
-const DiagnosisTypeSection = ({ onSelectType }) => (
-  <section id="about" className="py-20 px-6 bg-white">
-    <div className="max-w-4xl mx-auto">
-      <p className="text-sm tracking-widest mb-4 text-center" style={{ color: COLORS.navy }}>
-        Select Diagnosis Type
-      </p>
-      <h2 
-        className="text-3xl md:text-4xl font-bold text-center mb-4"
-        style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-      >
-        診断タイプを選択
-      </h2>
-      <p className="text-center mb-6" style={{ color: COLORS.gray600 }}>
-        目的に合わせて、2つの診断タイプからお選びください
-      </p>
-      
-      {/* プライバシー保護の注記 */}
-      <div 
-        className="flex items-center justify-center gap-2 mb-12 px-4 py-3 rounded-lg mx-auto max-w-xl"
-        style={{ backgroundColor: COLORS.gray100 }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span className="text-sm" style={{ color: COLORS.gray700 }}>
-          <strong>安心してご利用ください：</strong>入力データはサーバーに送信されず、お使いのブラウザ内でのみ処理されます。
-        </span>
-      </div>
-      
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* 簡易診断 */}
-        <article className="bg-white rounded-lg p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="inline-block px-3 py-1 rounded text-sm font-medium mb-6" style={{ backgroundColor: COLORS.gray100, color: COLORS.gray700 }}>
-            Simple
-          </div>
-          <h3 className="text-2xl font-bold mb-4" style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}>
-            簡易診断
-          </h3>
-          <p className="mb-6" style={{ color: COLORS.gray600 }}>
-            7つの基本的な質問に回答するだけで、売却価格の目安を算出します。
-          </p>
-          <ul className="space-y-2 mb-6 text-sm" style={{ color: COLORS.gray600 }}>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              年商（売上規模）
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              営業利益率
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              収益の安定性
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.navy} strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              営業年数・店舗数 等
-            </li>
-          </ul>
-          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100">
-            <span style={{ color: COLORS.gray500 }}>所要時間</span>
-            <span className="font-bold" style={{ color: COLORS.navyDark }}>約1分</span>
-          </div>
-          <button
-            onClick={() => onSelectType('simple')}
-            className="w-full py-4 rounded font-medium transition-all duration-200 border-2"
-            style={{ borderColor: COLORS.navy, color: COLORS.navy, backgroundColor: 'transparent' }}
-          >
-            簡易診断を始める
-          </button>
-        </article>
+    <div className="relative flex-1 flex items-center">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          
+          {/* 左側：メインコピー（大きく） */}
+          <div className="text-center lg:text-left order-2 lg:order-1">
+            {/* メインコピー */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 sm:mb-8" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>
+              あなたの店舗の<br />
+              <span className="relative inline-block mt-2">
+                <span className="relative z-10" style={{ color: COLORS.accent }}>「適正な売却価格」</span>
+                <span className="absolute bottom-1 sm:bottom-2 left-0 right-0 h-3 sm:h-4 -z-0 rounded-full opacity-30" style={{ backgroundColor: '#93c5fd' }} />
+              </span>
+              <br /><span className="mt-2 inline-block">を知っていますか？</span>
+            </h1>
+            
+            {/* サービス説明 */}
+            <p className="text-sm sm:text-base md:text-lg mb-4 leading-relaxed" style={{ color: COLORS.gray600 }}>
+              「のれん診断」は、飲食店オーナー様が売却を検討される際の第一歩として、<br className="hidden sm:block" />
+              店舗の適正な売却価格を無料で診断できるサービスです。
+            </p>
+            
+            <p className="text-sm sm:text-base md:text-lg mb-6 sm:mb-8 leading-relaxed" style={{ color: COLORS.gray600 }}>
+              M&Aのプロが使う3つの評価手法<br className="sm:hidden" />
+              （DCF法・時価純資産法・マルチプル法）で、<br />
+              あなたの飲食店の価値を<strong style={{ color: COLORS.primary }}>最短1分</strong>で精密に算出します。
+            </p>
 
-        {/* 詳細診断 */}
-        <article className="rounded-lg p-8 shadow-lg relative overflow-hidden" style={{ backgroundColor: COLORS.navy }}>
-          <div className="absolute top-0 right-0 px-4 py-2 text-xs font-bold" style={{ backgroundColor: COLORS.red, color: COLORS.white }}>
-            おすすめ
-          </div>
-          <div className="inline-block px-3 py-1 rounded text-sm font-medium mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: COLORS.white }}>
-            Detailed
-          </div>
-          <h3 className="text-2xl font-bold mb-4 text-white" style={{ fontFamily: "'Noto Serif JP', serif" }}>
-            詳細診断
-          </h3>
-          <p className="mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            財務情報を入力し、DCF法・時価純資産法・マルチプル法の3手法で精密に算出します。
-          </p>
-          <ul className="space-y-2 mb-6 text-sm text-white">
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              年商・営業利益（実数入力）
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              現預金・借入金
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              業態・売上推移
-            </li>
-            <li className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              オーナー依存度・営業年数・店舗数
-            </li>
-          </ul>
-          <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/20">
-            <span style={{ color: 'rgba(255,255,255,0.7)' }}>所要時間</span>
-            <span className="font-bold text-white">約2分</span>
-          </div>
-          <button
-            onClick={() => onSelectType('detailed')}
-            className="w-full py-4 rounded font-medium transition-all duration-200"
-            style={{ backgroundColor: COLORS.red, color: COLORS.white }}
-          >
-            詳細診断を始める
-          </button>
-        </article>
-      </div>
-    </div>
-  </section>
-);
-
-// ========================================
-// FAQ Section
-// ========================================
-const FAQSection = () => (
-  <section id="faq" className="py-20 px-6" style={{ backgroundColor: COLORS.gray50 }}>
-    <div className="max-w-3xl mx-auto">
-      <p className="text-sm tracking-widest mb-4 text-center" style={{ color: COLORS.navy }}>
-        FAQ
-      </p>
-      <h2 
-        className="text-3xl md:text-4xl font-bold text-center mb-12"
-        style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-      >
-        よくある質問
-      </h2>
-      
-      <div className="space-y-4">
-        {[
-          {
-            question: '3つの評価手法とは何ですか？',
-            answer: 'DCF法（将来の収益を現在価値に割引）、時価純資産法（資産価値＋営業権）、マルチプル法（業界の売買倍率を適用）の3つです。それぞれ異なる視点から企業価値を算出し、総合的な評価額を導き出します。',
-          },
-          {
-            question: '診断は本当に無料ですか？',
-            answer: 'はい、のれん診断は完全無料でご利用いただけます。会員登録も不要で、今すぐ診断を始めることができます。',
-          },
-          {
-            question: '簡易診断と詳細診断の違いは何ですか？',
-            answer: '簡易診断は7つの選択式質問で概算価格を算出します。詳細診断は財務情報の実数入力により、DCF法・時価純資産法・マルチプル法の3手法を用いてより精密な診断結果をお出しします。',
-          },
-          {
-            question: '複数店舗を持っている場合はどう入力すればよいですか？',
-            answer: '各質問に「全店舗合計で」という注記がある項目は、全店舗の合計値でお答えください。営業年数は1号店を基準にお答えください。',
-          },
-          {
-            question: '入力した情報は保存されますか？',
-            answer: 'いいえ、入力いただいた情報はサーバーに保存されません。診断はすべてお使いのブラウザ上で完結し、個人情報が外部に送信されることはありません。',
-          },
-        ].map((item, index) => (
-          <details key={index} className="bg-white rounded-lg shadow-sm border border-gray-100 group">
-            <summary className="flex items-center justify-between p-6 cursor-pointer list-none" style={{ color: COLORS.navyDark }}>
-              <span className="font-medium pr-4">{item.question}</span>
-              <svg 
-                width="20" height="20" viewBox="0 0 24 24" fill="none" 
-                stroke={COLORS.gray400} strokeWidth="2"
-                className="flex-shrink-0 transition-transform group-open:rotate-180"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </summary>
-            <div className="px-6 pb-6">
-              <p style={{ color: COLORS.gray600, lineHeight: 1.8 }}>{item.answer}</p>
-            </div>
-          </details>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-// ========================================
-// Footer with Modal Links
-// ========================================
-const Footer = () => {
-  const [showModal, setShowModal] = useState(null);
-
-  const closeModal = () => setShowModal(null);
-
-  return (
-    <>
-      <footer className="py-12 px-6" style={{ backgroundColor: COLORS.navyDark }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-8 h-8 rounded flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: COLORS.navy }}
-              >
-                暖
-              </div>
-              <span className="text-white font-medium">のれん診断</span>
-            </div>
-            <nav className="flex gap-6 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            {/* CTAボタン */}
+            <div className="mb-5 sm:mb-6">
               <button 
-                onClick={() => setShowModal('terms')}
-                className="hover:text-white transition-colors"
+                onClick={onStartDiagnosis} 
+                className="group px-8 sm:px-10 py-4 rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 mx-auto lg:mx-0"
+                style={{ backgroundColor: COLORS.cta, color: COLORS.white }}
               >
-                利用規約
-              </button>
-              <button 
-                onClick={() => setShowModal('privacy')}
-                className="hover:text-white transition-colors"
-              >
-                プライバシーポリシー
-              </button>
-            </nav>
-          </div>
-          <div className="mt-8 pt-8 border-t border-white/10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            &copy; 2025 のれん診断運営事務局 All rights reserved.
-          </div>
-        </div>
-      </footer>
-
-      {/* モーダル */}
-      {showModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          onClick={closeModal}
-        >
-          <div 
-            className="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6 md:p-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b border-gray-200">
-              <h2 
-                className="text-xl md:text-2xl font-bold"
-                style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-              >
-                {showModal === 'privacy' ? 'プライバシーポリシー' : '利用規約'}
-              </h2>
-              <button 
-                onClick={closeModal}
-                className="p-2 hover:opacity-70 transition-opacity"
-                aria-label="閉じる"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLORS.gray600} strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                <span>無料で診断をはじめる</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
             </div>
-            
-            {showModal === 'terms' && (
-              <div className="space-y-4 text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
-                <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
-                
-                <p>本利用規約（以下「本規約」）は、のれん診断運営事務局（以下「当方」）が提供する「のれん診断」（以下「本サービス」）の利用条件を定めるものです。<strong>本サービスをご利用いただいた時点で、本規約に同意したものとみなします。</strong>本規約に同意いただけない場合は、本サービスを利用しないでください。</p>
 
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第1条（サービス内容）</h3>
-                <p>本サービスは、飲食店のM&A（合併・買収）における売却価格の目安を算出することを目的としたWebアプリケーションです。DCF法、時価純資産法、マルチプル法等の一般的な企業価値評価手法を用いて、ユーザーが入力した情報に基づき参考価格を提示します。</p>
+            {/* 安心ポイント */}
+            <div className="flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 text-sm font-bold" style={{ color: '#000000' }}>
+              {['会員登録不要', 'データ保存なし', '何度でも無料'].map((text, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>
+                  {text}
+                </span>
+              ))}
+            </div>
+          </div>
 
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第2条（利用料金）</h3>
-                <p>本サービスは現在、無料で提供しています。ただし、当方は、事前の予告なく、将来的に料金体系を変更する権利を留保します。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第3条（禁止事項）</h3>
-                <p>ユーザーは、本サービスの利用にあたり、以下の行為を行ってはなりません。</p>
-                <ol className="list-decimal pl-6 space-y-1">
-                  <li>法令または公序良俗に違反する行為</li>
-                  <li>犯罪行為に関連する行為</li>
-                  <li>本サービスのサーバーやネットワークに過度な負荷をかける行為</li>
-                  <li>本サービスの運営を妨害する行為</li>
-                  <li>第三者の著作権、商標権、プライバシー権その他の権利を侵害する行為</li>
-                  <li>本サービスを不正に利用する行為</li>
-                  <li>本サービスの逆コンパイル、リバースエンジニアリング等の行為</li>
-                  <li>自動化されたツール（ボット等）を用いて本サービスにアクセスする行為</li>
-                  <li>本サービスを商業目的で再配布、転売する行為</li>
-                  <li>虚偽の情報を入力する行為</li>
-                  <li>その他、当方が不適切と判断する行為</li>
-                </ol>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第4条（免責事項）</h3>
-                <div className="p-4 rounded-lg my-4" style={{ backgroundColor: COLORS.yellowLight, border: `1px solid ${COLORS.yellow}` }}>
-                  <p className="font-bold" style={{ color: COLORS.navyDark }}>⚠️ 重要：以下の免責事項を必ずお読みください</p>
-                  <p className="mt-2">本サービスを利用する前に、以下の免責事項を十分にご理解ください。本サービスの利用をもって、これらの免責事項に同意したものとみなします。</p>
+          {/* 右側：PCイラスト（本格的デザイン） */}
+          <div className="flex justify-center lg:justify-end order-1 lg:order-2">
+            <div className="relative">
+              {/* 月桂樹付きバッジ */}
+              <div className="absolute -top-2 sm:-top-4 left-1/2 transform -translate-x-1/2 z-20">
+                <div className="relative flex items-center justify-center">
+                  {/* 月桂樹左 */}
+                  <svg className="absolute -left-8 sm:-left-10 w-7 sm:w-9 h-14 sm:h-18" viewBox="0 0 36 72" fill="none">
+                    <path d="M28 10 Q24 8, 22 12 Q24 16, 28 14 Q30 12, 28 10Z" fill="#fbbf24"/>
+                    <path d="M26 18 Q22 16, 19 20 Q21 24, 26 22 Q28 20, 26 18Z" fill="#fbbf24"/>
+                    <path d="M23 26 Q19 24, 16 28 Q18 32, 23 30 Q25 28, 23 26Z" fill="#fbbf24"/>
+                    <path d="M20 34 Q16 32, 14 36 Q16 40, 20 38 Q22 36, 20 34Z" fill="#fbbf24"/>
+                    <path d="M17 42 Q14 40, 12 44 Q14 47, 17 45 Q19 43, 17 42Z" fill="#fbbf24"/>
+                    <path d="M15 49 Q12 48, 11 51 Q12 54, 15 52 Q17 50, 15 49Z" fill="#fbbf24"/>
+                    <path d="M13 56 Q11 55, 10 57 Q11 59, 13 58 Q14 57, 13 56Z" fill="#fbbf24"/>
+                  </svg>
+                  {/* 月桂樹右 */}
+                  <svg className="absolute -right-8 sm:-right-10 w-7 sm:w-9 h-14 sm:h-18" viewBox="0 0 36 72" fill="none">
+                    <path d="M8 10 Q12 8, 14 12 Q12 16, 8 14 Q6 12, 8 10Z" fill="#fbbf24"/>
+                    <path d="M10 18 Q14 16, 17 20 Q15 24, 10 22 Q8 20, 10 18Z" fill="#fbbf24"/>
+                    <path d="M13 26 Q17 24, 20 28 Q18 32, 13 30 Q11 28, 13 26Z" fill="#fbbf24"/>
+                    <path d="M16 34 Q20 32, 22 36 Q20 40, 16 38 Q14 36, 16 34Z" fill="#fbbf24"/>
+                    <path d="M19 42 Q22 40, 24 44 Q22 47, 19 45 Q17 43, 19 42Z" fill="#fbbf24"/>
+                    <path d="M21 49 Q24 48, 25 51 Q24 54, 21 52 Q19 50, 21 49Z" fill="#fbbf24"/>
+                    <path d="M23 56 Q25 55, 26 57 Q25 59, 23 58 Q22 57, 23 56Z" fill="#fbbf24"/>
+                  </svg>
+                  <div className="bg-white px-4 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-lg border-2 border-amber-400 z-10">
+                    <p className="text-[9px] sm:text-[10px] text-amber-600 font-semibold text-center tracking-wide">累計診断数</p>
+                    <p className="text-base sm:text-lg font-bold text-center" style={{ color: COLORS.accent }}>
+                      1,500<span className="text-xs sm:text-sm ml-0.5">件突破</span>
+                    </p>
+                  </div>
                 </div>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-1. 診断結果について</h4>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>本サービスが提供する診断結果、評価額、分析データ等は、すべて<strong>参考情報</strong>であり、その正確性、完全性、有用性、適時性、信頼性を一切保証しません。</li>
-                  <li><strong>本サービスは、飲食店の売却価格を保証するものではありません。</strong></li>
-                  <li><strong>本サービスは、M&A取引の成立を保証するものではありません。</strong></li>
-                  <li>診断結果は、実際のM&A取引における買い手の評価、デューデリジェンス結果、市場環境等により大幅に異なる場合があります。</li>
-                  <li>診断に使用する評価手法（DCF法、時価純資産法、マルチプル法等）は一般的な手法であり、個別の事情を考慮した精密な評価ではありません。</li>
-                </ul>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-2. 専門的助言の否定</h4>
-                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: COLORS.gray100 }}>
-                  <p className="font-bold" style={{ color: COLORS.navyDark }}>⚠️ 本サービスは専門的助言を提供するものではありません</p>
-                </div>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>本サービスは、<strong>M&Aアドバイザリー、財務アドバイス、投資助言、税務相談、法律相談、会計監査その他の専門的助言を提供するものではありません。</strong></li>
-                  <li>実際のM&A取引を行う際は、必ずM&A仲介会社、公認会計士、税理士、弁護士等の資格を持った専門家にご相談ください。</li>
-                  <li>本サービスの診断結果のみに基づいて重要な意思決定を行わないでください。</li>
-                </ul>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-3. 損害賠償の免責</h4>
-                <p><strong>当方の故意または重大な過失による場合を除き</strong>、本サービスの利用または利用不能により生じた<strong>いかなる損害</strong>についても、当方は<strong>一切の責任を負いません</strong>。</p>
-                <p className="mt-2">免責される損害には、以下を含みますが、これらに限定されません：</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>直接損害、間接損害、特別損害、付随的損害、派生的損害、結果的損害、懲罰的損害</li>
-                  <li>逸失利益、事業機会の損失、収入の損失</li>
-                  <li>データの損失、破損、漏洩</li>
-                  <li><strong>M&A取引の不成立、売却価格の低下</strong></li>
-                  <li><strong>診断結果と実際の売却価格との乖離</strong></li>
-                  <li><strong>本サービスの診断結果を信頼して行動したことによる損害</strong></li>
-                  <li>精神的苦痛、名誉の毀損</li>
-                  <li>第三者からの請求に基づく損害</li>
-                </ul>
-                <p className="mt-2">本サービスの利用に関連して、ユーザーと第三者との間で紛争が生じた場合、ユーザーは自己の責任と費用で解決するものとし、当方は一切の責任を負いません。</p>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-4. 賠償上限</h4>
-                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: COLORS.gray100 }}>
-                  <p><strong>万が一、前項の定めにかかわらず当方が損害賠償責任を負う場合であっても、当方の賠償責任は、本サービスが無料で提供されていることに鑑み、金0円を上限とします。</strong></p>
-                </div>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>4-5. サービス提供について</h4>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>当方は、本サービスの内容を予告なく変更、追加、削除することがあります。</li>
-                  <li><strong>当方は、理由の如何を問わず、いつでも、事前の予告なく、本サービスの全部または一部を停止・中断・終了することができます。</strong>これによりユーザーに生じた損害について、当方は責任を負いません。</li>
-                  <li>システム障害、天災、その他不可抗力によりサービスが利用できない場合、当方は責任を負いません。</li>
-                </ul>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第5条（ユーザーの責任および補償）</h3>
-                <p><strong>ユーザーは、自己の責任において本サービスを利用するものとします。</strong></p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>本サービスの利用に関連してユーザーに生じた損害は、すべてユーザー自身が負担するものとします。</li>
-                  <li>ユーザーが本規約に違反し、または不正もしくは違法な行為により、当方または第三者に損害を与えた場合、ユーザーは当方および第三者に対し、その損害（弁護士費用、訴訟費用を含む）を賠償する責任を負います。</li>
-                </ul>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第6条（知的財産権）</h3>
-                <p>本サービスに関する著作権、商標権その他の知的財産権は、当方または正当な権利者に帰属します。ユーザーは、本サービスを通じて提供されるコンテンツを、私的利用の範囲を超えて複製、転載、改変、販売、公衆送信等することはできません。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第7条（利用制限および終了）</h3>
-                <p>当方は、ユーザーが本規約に違反した場合、または本サービスの運営上必要と判断した場合、<strong>事前の通知なく、理由を開示することなく</strong>、ユーザーの利用を制限または停止することができます。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第8条（規約の変更）</h3>
-                <p>当方は、必要に応じて、ユーザーへの事前の通知なく、本規約を変更することがあります。変更後の規約は、本サービス上に掲載した時点で効力を生じるものとします。本サービスの利用を継続した場合、変更後の規約に同意したものとみなします。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第9条（分離可能性）</h3>
-                <p>本規約のいずれかの条項が法令等により無効または執行不能と判断された場合であっても、当該条項以外の本規約の各条項は、引き続き完全に効力を有するものとします。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第10条（準拠法および管轄）</h3>
-                <p>本規約の解釈および適用は日本法に準拠します。本サービスに関連して紛争が生じた場合、<strong>長野地方裁判所</strong>を第一審の専属的合意管轄裁判所とします。</p>
               </div>
-            )}
-            
-            {showModal === 'privacy' && (
-              <div className="space-y-4 text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
-                <p className="font-medium" style={{ color: COLORS.navyDark }}>最終更新日：2025年1月19日</p>
-                
-                <p>のれん診断運営事務局（以下「当方」）は、本サービスにおけるユーザーの情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。</p>
 
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第1条（基本方針）</h3>
-                <p>当方は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第2条（取得する情報）</h3>
-                
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-1. 診断入力データについて</h4>
-                <div className="p-4 rounded-lg my-2" style={{ backgroundColor: '#d4edda', border: '1px solid #28a745' }}>
-                  <p><strong>✓ 安心ポイント：</strong>ユーザーが診断に入力した財務情報（年商、営業利益、従業員数等）は、<strong>当方のサーバーに送信・保存されません</strong>。すべての計算処理はユーザーのブラウザ内でのみ行われます。</p>
+              {/* PC本体 */}
+              <div className="relative mt-10 sm:mt-12" style={{ width: '360px', maxWidth: '90vw' }}>
+                <div className="bg-gray-800 rounded-t-xl p-1 shadow-2xl">
+                  {/* ブラウザバー */}
+                  <div className="bg-gray-700 rounded-t-lg px-3 py-1.5 flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                    <div className="flex-1 mx-3">
+                      <div className="bg-gray-600 rounded text-center text-[9px] text-gray-400 py-0.5 px-2">noren-shindan.jp</div>
+                    </div>
+                  </div>
+                  {/* 画面コンテンツ（本格的） */}
+                  <div className="bg-white p-4" style={{ minHeight: '200px' }}>
+                    <div className="border-b border-gray-100 pb-2 mb-3">
+                      <p className="text-[10px] text-gray-500 text-center">診断結果レポート</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[11px] font-medium text-gray-600 mb-1">推定売却価格</p>
+                      <div className="flex items-baseline justify-center mb-3">
+                        <span className="text-3xl sm:text-4xl font-bold" style={{ color: COLORS.accent }}>9,250</span>
+                        <span className="text-sm font-bold text-gray-500 ml-1">万円</span>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-[9px] text-gray-400 mb-1">想定レンジ</p>
+                        <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: COLORS.gray200 }}>
+                          <div className="h-full rounded-full" style={{ width: '70%', background: `linear-gradient(90deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)` }} />
+                        </div>
+                        <div className="flex justify-between text-[8px] text-gray-400 mt-1">
+                          <span>7,850万円</span>
+                          <span>1.06億円</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 mt-3 pt-2 border-t border-gray-100">
+                        <div className="text-center">
+                          <p className="text-[7px] text-gray-400">DCF法</p>
+                          <p className="text-[10px] font-bold" style={{ color: COLORS.accent }}>9,800万</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[7px] text-gray-400">純資産法</p>
+                          <p className="text-[10px] font-bold" style={{ color: COLORS.accent }}>8,500万</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[7px] text-gray-400">マルチプル</p>
+                          <p className="text-[10px] font-bold" style={{ color: COLORS.accent }}>9,450万</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-2. 自動的に取得する情報</h4>
-                <p>サービス改善のため、以下の匿名化された情報を収集する場合があります：</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>アクセス日時、利用時間帯</li>
-                  <li>デバイス種別、ブラウザ種別</li>
-                  <li>参照元URL</li>
-                  <li>ページ閲覧履歴</li>
-                </ul>
-                <p className="mt-2">これらの情報は個人を特定するものではありません。</p>
-
-                <h4 className="font-bold mt-4" style={{ color: COLORS.navyDark }}>2-3. ブラウザに保存される情報</h4>
-                <p>診断結果等のデータは、ユーザーのブラウザ（localStorage）に一時的に保存される場合があります。これらのデータは当方のサーバーには送信されません。ブラウザのデータ消去により削除されます。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第3条（利用目的）</h3>
-                <p>取得した情報は、以下の目的で利用します。</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>本サービスの提供、維持、改善</li>
-                  <li>統計データの作成（個人を特定しない形式）</li>
-                  <li>不正利用の防止</li>
-                </ul>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第4条（アクセス解析ツール）</h3>
-                <p>当サービスでは、サービス改善のためにGoogle Analytics等のアクセス解析ツールを使用する場合があります。</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>これらのツールでは、Cookieを使用して匿名の利用状況データを収集することがあります。</li>
-                  <li>収集されるデータに個人を特定する情報は含まれません。</li>
-                  <li>Google Analyticsの利用規約およびプライバシーポリシーについては、Google社のウェブサイトでご確認ください。</li>
-                </ul>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第5条（第三者への提供）</h3>
-                <p>当方は、法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供、販売、貸与することはありません。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第6条（データの保存期間）</h3>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>統計情報：サービス運営に必要な期間</li>
-                  <li>ブラウザに保存されるデータ：ユーザーが削除するまで</li>
-                </ul>
-                <p className="mt-2">上記の情報は、保存目的を達成した後、または本サービスの終了後、合理的な期間内に削除します。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第7条（安全管理措置）</h3>
-                <p>当方は、取得した情報の漏洩、滅失、毀損の防止その他の安全管理のために必要かつ適切な措置を講じます。ただし、インターネット上のデータ送信について、完全なセキュリティを保証することはできません。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第8条（ユーザーの権利）</h3>
-                <p>ユーザーは、ブラウザの設定からlocalStorageを消去することで、本サービスに保存されたデータを削除できます。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第9条（プライバシーポリシーの変更）</h3>
-                <p>当方は、必要に応じて本プライバシーポリシーを変更することがあります。変更後のポリシーは、本サービス上に掲載した時点で効力を生じます。</p>
-
-                <h3 className="font-bold mt-6 text-base" style={{ color: COLORS.navyDark }}>第10条（お問い合わせ）</h3>
-                <p><strong>運営者：</strong>のれん診断運営事務局</p>
-                <p className="mt-2 text-xs" style={{ color: COLORS.gray500 }}>※ 個別のお問い合わせへの回答にはお時間をいただく場合があります。また、すべてのお問い合わせに回答できない場合があります。</p>
+                {/* PCスタンド */}
+                <div className="relative">
+                  <div className="h-4 mx-auto rounded-b-sm" style={{ width: '35%', background: 'linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%)' }} />
+                  <div className="h-2 mx-auto" style={{ width: '50%', background: 'linear-gradient(180deg, #94a3b8 0%, #64748b 100%)', borderRadius: '0 0 6px 6px' }} />
+                </div>
               </div>
-            )}
-            
-            <button
-              onClick={closeModal}
-              className="mt-8 w-full py-3 rounded font-medium transition-all duration-200"
-              style={{ backgroundColor: COLORS.navy, color: COLORS.white }}
-            >
-              閉じる
-            </button>
+
+              {/* スマホ（現実的な比率に調整） */}
+              <div className="absolute -right-2 sm:-right-6 bottom-8 sm:bottom-10 w-16 sm:w-20 bg-gray-900 rounded-xl p-0.5 shadow-xl transform rotate-3">
+                <div className="bg-white rounded-lg overflow-hidden">
+                  {/* ステータスバー */}
+                  <div className="h-3 flex items-center justify-center" style={{ backgroundColor: COLORS.accent }}>
+                    <span className="text-white text-[6px] font-bold">のれん診断</span>
+                  </div>
+                  {/* コンテンツ */}
+                  <div className="p-1.5">
+                    <p className="text-[2px] text-gray-500 text-center mb-0.5">推定売却価格</p>
+                    <p className="text-sm font-bold text-center" style={{ color: COLORS.accent }}>
+                      9,250<span className="text-[6px] ml-0.5">万円</span>
+                    </p>
+                    <div className="mt-1.5">
+                      <div className="h-1 rounded-full" style={{ backgroundColor: COLORS.gray200 }}>
+                        <div className="h-full rounded-full" style={{ width: '70%', backgroundColor: COLORS.accent }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
+
+    {/* 波形 */}
+    <div className="relative h-12 sm:h-16 lg:h-20 mt-auto">
+      <svg viewBox="0 0 1440 80" fill="none" className="absolute bottom-0 w-full h-full" preserveAspectRatio="none">
+        <path d="M0 80V50C240 20 480 60 720 40C960 20 1200 50 1440 30V80H0Z" fill="#ffffff" />
+      </svg>
+    </div>
+  </section>
+);
+
+// ========================================
+// Features Section（アウトラインイラスト）
+// ========================================
+const FeaturesSection = () => {
+  const features = [
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <circle cx="32" cy="32" r="24" />
+          <text x="32" y="40" textAnchor="middle" fontSize="24" fill="#3b82f6" stroke="none" fontWeight="bold">¥</text>
+          <path d="M32 8v4M32 52v4M8 32h4M52 32h4" strokeLinecap="round" />
+        </svg>
+      ),
+      title: '完全無料',
+      description: '診断から結果確認まで\n一切費用はかかりません'
+    },
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <circle cx="32" cy="32" r="24" />
+          <circle cx="32" cy="32" r="16" />
+          <path d="M32 20v12l8 4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      title: '最短60秒',
+      description: '簡単な質問に答えるだけで\nすぐに結果がわかります'
+    },
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <rect x="16" y="12" width="32" height="40" rx="4" />
+          <circle cx="32" cy="26" r="8" />
+          <path d="M22 44h20" strokeLinecap="round" />
+          <path d="M26 38c0 0 2 4 6 4s6-4 6-4" strokeLinecap="round" />
+        </svg>
+      ),
+      title: '会員登録不要',
+      description: '面倒な登録手続きなしで\n今すぐ診断できます'
+    },
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <rect x="12" y="16" width="40" height="32" rx="2" />
+          <path d="M12 24h40" />
+          <path d="M20 32h8M20 38h12" strokeLinecap="round" />
+          <path d="M40 32l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      title: '精密評価',
+      description: 'M&Aのプロが使う\n3つの手法で算出'
+    },
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <path d="M32 12c-12 0-20 8-20 20s8 20 20 20" />
+          <path d="M32 12c12 0 20 8 20 20s-8 20-20 20" strokeDasharray="4 4" />
+          <path d="M28 28l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M32 8v8M32 48v8" strokeLinecap="round" />
+        </svg>
+      ),
+      title: '何度でもOK',
+      description: '条件を変えて\n何度でもシミュレーション'
+    },
+    { 
+      icon: (
+        <svg className="w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <rect x="16" y="24" width="32" height="24" rx="4" />
+          <path d="M24 24v-4a8 8 0 1116 0v4" />
+          <circle cx="32" cy="36" r="4" />
+          <path d="M32 40v4" strokeLinecap="round" />
+        </svg>
+      ),
+      title: 'データ保存なし',
+      description: '入力情報は保存されず\nプライバシーも安心'
+    },
+  ];
+
+  return (
+    <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>FEATURES</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>
+            のれん診断が選ばれる理由
+          </h2>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-10">
+          {features.map((f, i) => (
+            <div key={i} className="text-center">
+              <div className="flex justify-center mb-4">{f.icon}</div>
+              <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: COLORS.accent }}>{f.title}</h3>
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: COLORS.gray600 }}>{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 };
 
 // ========================================
-// 簡易診断コンポーネント
+// 3つの評価手法セクション（横並び）
+// ========================================
+const MethodSection = () => {
+  const methods = [
+    {
+      icon: (
+        <svg className="w-14 h-14" viewBox="0 0 56 56" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <rect x="8" y="8" width="40" height="40" rx="4" />
+          <path d="M16 36l8-12 8 8 10-14" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          <circle cx="40" cy="18" r="3" fill="#3b82f6" stroke="none" />
+        </svg>
+      ),
+      title: 'DCF法',
+      subtitle: '将来キャッシュフロー割引法',
+      description: '将来生み出すキャッシュフローを現在価値に割り引いて算出'
+    },
+    {
+      icon: (
+        <svg className="w-14 h-14" viewBox="0 0 56 56" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <rect x="8" y="24" width="16" height="24" rx="2" />
+          <rect x="28" y="16" width="16" height="32" rx="2" />
+          <path d="M16 12h24" strokeLinecap="round" strokeWidth="2" />
+          <path d="M28 8v8" strokeLinecap="round" />
+        </svg>
+      ),
+      title: '時価純資産法',
+      subtitle: '＋ 営業権（のれん）',
+      description: '資産の時価総額にブランド力等の「のれん代」を加算'
+    },
+    {
+      icon: (
+        <svg className="w-14 h-14" viewBox="0 0 56 56" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+          <circle cx="28" cy="28" r="20" />
+          <path d="M28 12v32M16 20l12-4 12 4M16 36l12 4 12-4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      title: 'マルチプル法',
+      subtitle: '類似会社比較法',
+      description: '同業種のM&A事例やEBITDA倍率を参考に客観評価'
+    }
+  ];
+
+  return (
+    <section id="method" className="py-16 sm:py-24 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>VALUATION METHOD</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>
+            プロフェッショナル水準の<br className="sm:hidden" />3つの評価手法
+          </h2>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+          {methods.map((m, i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 text-center hover:shadow-lg transition-shadow">
+              <div className="flex justify-center mb-3">{m.icon}</div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: COLORS.primaryDark }}>{m.title}</h3>
+              <p className="text-xs sm:text-sm font-medium mb-3" style={{ color: '#d4a853' }}>{m.subtitle}</p>
+              <p className="text-sm leading-relaxed" style={{ color: COLORS.gray600 }}>{m.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ========================================
+// Reviews（線画スタイル人物イラスト）
+// ========================================
+const ReviewsSection = () => {
+  const reviews = [
+    { 
+      rating: 5, 
+      text: '売却を考え始めた時に利用しました。60秒で概算がわかるので、まずは目安を知りたい方にぴったりです。', 
+      author: '居酒屋経営', 
+      area: '東京都', 
+      revenue: '年商3,000万円台',
+      avatar: (
+        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
+          <circle cx="32" cy="24" r="12" />
+          <path d="M20 22c0-8 6-14 12-14s12 6 12 14" />
+          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
+          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
+          <rect x="26" y="8" width="12" height="6" rx="2" fill="none" />
+        </svg>
+      )
+    },
+    { 
+      rating: 5, 
+      text: '他社の査定と比べても妥当な金額でした。無料でここまでわかるのは驚きです。', 
+      author: 'カフェオーナー', 
+      area: '大阪府', 
+      revenue: '年商1,500万円台',
+      avatar: (
+        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
+          <circle cx="32" cy="24" r="12" />
+          <path d="M20 20c4-6 10-8 16-6s10 8 8 16" />
+          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
+          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
+          <path d="M24 12c0-4 4-6 8-6s8 2 8 6" />
+        </svg>
+      )
+    },
+    { 
+      rating: 4, 
+      text: '詳細診断で3つの評価手法による内訳が見れるのが良い。専門家との相談前の準備に役立ちました。', 
+      author: 'ラーメン店経営', 
+      area: '神奈川県', 
+      revenue: '年商5,000万円台',
+      avatar: (
+        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
+          <circle cx="32" cy="24" r="12" />
+          <path d="M22 18h20c0 4-4 8-10 8s-10-4-10-8z" />
+          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
+          <circle cx="28" cy="24" r="1.5" fill="#3b82f6" stroke="none" />
+          <circle cx="36" cy="24" r="1.5" fill="#3b82f6" stroke="none" />
+          <path d="M28 30c2 2 6 2 8 0" strokeLinecap="round" />
+        </svg>
+      )
+    },
+    { 
+      rating: 5, 
+      text: '登録不要で何度でも試せるのが嬉しい。条件を変えてシミュレーションできます。', 
+      author: 'レストラン経営', 
+      area: '福岡県', 
+      revenue: '年商8,000万円台',
+      avatar: (
+        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
+          <circle cx="32" cy="24" r="12" />
+          <path d="M24 16c2-4 6-6 8-6s6 2 8 6" />
+          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
+          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
+          <path d="M20 44h24" strokeLinecap="round" />
+        </svg>
+      )
+    },
+  ];
+
+  return (
+    <section id="reviews" className="py-16 sm:py-24 px-4 sm:px-6 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>REVIEWS</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>利用者の声</h2>
+        </div>
+        
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+          {reviews.map((r, i) => (
+            <div key={i} className="bg-gray-50 rounded-2xl p-5 sm:p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-blue-50 p-1">
+                  {r.avatar}
+                </div>
+                <div className="flex-1">
+                  <div className="flex gap-0.5 mb-1">
+                    {[1,2,3,4,5].map(s => <svg key={s} className="w-4 h-4" viewBox="0 0 24 24" fill={s <= r.rating ? '#fbbf24' : '#e5e7eb'}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>)}
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{r.author} / {r.area}</p>
+                  <p className="text-xs" style={{ color: COLORS.gray500 }}>{r.revenue}</p>
+                </div>
+              </div>
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: COLORS.gray700 }}>{r.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ========================================
+// FAQ
+// ========================================
+const FAQSection = () => {
+  const faqs = [
+    { q: '診断は本当に無料ですか？', a: 'はい、完全無料です。会員登録も不要で、入力情報はサーバーに保存されません。何度でもお試しいただけます。' },
+    { q: '診断にはどのくらい時間がかかりますか？', a: '簡易診断は7つの選択式質問で約1分、詳細診断は財務情報の入力が必要で約2分で完了します。' },
+    { q: '診断結果はどのくらい正確ですか？', a: '簡易診断は概算価格の目安、詳細診断はDCF法・時価純資産法・マルチプル法の3つの専門的評価手法で算出した参考価格です。実際の売却価格は、買い手との交渉や市場環境により変動するため、正確な価格は M&A専門家にご相談されることをお勧めします。' },
+    { q: '複数店舗の場合はどう入力しますか？', a: '年商・利益・従業員数などは全店舗の合計でご入力ください。営業年数は1号店を基準にお答えください。' },
+    { q: '赤字店舗でも診断できますか？', a: 'はい、診断可能です。赤字店舗でも資産価値や将来の収益改善可能性を考慮した評価を行います。' },
+  ];
+
+  return (
+    <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>FAQ</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>よくある質問</h2>
+        </div>
+        
+        <div className="space-y-3">
+          {faqs.map((f, i) => (
+            <details key={i} className="group bg-white rounded-xl">
+              <summary className="flex items-center justify-between p-4 sm:p-5 cursor-pointer list-none font-medium text-sm sm:text-base" style={{ color: COLORS.primaryDark }}>
+                <span className="pr-4">{f.q}</span>
+                <svg className="w-5 h-5 flex-shrink-0 transition-transform group-open:rotate-180" style={{ color: COLORS.gray400 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <div className="px-4 sm:px-5 pb-4 sm:pb-5"><p className="text-sm leading-relaxed" style={{ color: COLORS.gray600 }}>{f.a}</p></div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ========================================
+// Footer（運営情報削除、ロゴ中央表示）
+// ========================================
+const Footer = ({ onContactClick }) => (
+  <footer className="py-10 sm:py-14 px-4 sm:px-6" style={{ backgroundColor: COLORS.primaryDark }}>
+    <div className="max-w-4xl mx-auto text-center">
+      <div className="mb-5">
+        <img src={LOGO_URL} alt="のれん診断" className="h-10 sm:h-12 w-auto mx-auto brightness-0 invert opacity-90" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+        <span className="hidden text-xl font-bold text-white opacity-90" style={{ fontFamily: "'Noto Serif JP', serif", display: 'none' }}>のれん診断</span>
+      </div>
+      <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.6)' }}>© 2026 Noren Shindan. All rights reserved.</p>
+      <nav className="flex flex-wrap justify-center gap-5 sm:gap-8 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        <a href="/terms" className="hover:text-white transition-colors">利用規約</a>
+        <a href="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</a>
+        <a href="/contact" onClick={(e) => { e.preventDefault(); if (onContactClick) onContactClick(); }} className="hover:text-white transition-colors cursor-pointer">お問い合わせ</a>
+      </nav>
+    </div>
+  </footer>
+);
+
+// ========================================
+// Contact Page
+// ========================================
+const ContactPage = ({ onBack }) => (
+  <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+    <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="flex items-center gap-1 text-sm mb-6 hover:opacity-70" style={{ color: COLORS.gray500 }}>
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7" /></svg>トップに戻る
+      </button>
+      
+      <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>お問い合わせ</h1>
+        
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: COLORS.gray600 }}>
+          「のれん診断」に関するお問い合わせは、以下のメールアドレスまでご連絡ください。<br />
+          通常、2〜3営業日以内にご返信いたします。
+        </p>
+        
+        <div className="bg-gray-50 rounded-xl p-5 mb-6">
+          <p className="text-sm font-medium mb-2" style={{ color: COLORS.gray700 }}>メールでのお問い合わせ</p>
+          <a href="mailto:contact@noren-shindan.jp" className="text-lg font-bold flex items-center gap-2" style={{ color: COLORS.accent }}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            contact@noren-shindan.jp
+          </a>
+        </div>
+        
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-base font-bold mb-4" style={{ color: COLORS.primaryDark }}>よくあるお問い合わせ内容</h2>
+          <ul className="space-y-2 text-sm" style={{ color: COLORS.gray600 }}>
+            <li className="flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              診断結果に関するご質問
+            </li>
+            <li className="flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              サービスの利用方法について
+            </li>
+            <li className="flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              M&Aに関するご相談
+            </li>
+            <li className="flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              その他のお問い合わせ
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ========================================
+// Loading
+// ========================================
+const LoadingScreen = ({ message = '計算中...' }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95">
+    <div className="text-center">
+      <div className="w-12 h-12 mx-auto mb-4 relative">
+        <div className="absolute inset-0 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: COLORS.gray200, borderTopColor: COLORS.accent }} />
+      </div>
+      <p className="text-sm font-medium" style={{ color: COLORS.gray700 }}>{message}</p>
+    </div>
+  </div>
+);
+
+// ========================================
+// Utility
+// ========================================
+const formatNumber = (num) => (num === '' || num === null || num === undefined) ? '' : Number(num).toLocaleString();
+const parseFormattedNumber = (str) => str ? str.replace(/,/g, '') : '';
+const formatCurrency = (value) => {
+  if (value >= 100000000) return `${(value / 100000000).toFixed(1)}億円`;
+  if (value >= 10000) return `${Math.round(value / 10000).toLocaleString()}万円`;
+  return `${value.toLocaleString()}円`;
+};
+
+// ========================================
+// Progress
+// ========================================
+const SegmentedProgress = ({ current, total, category, remainingTime }) => (
+  <div className="mb-5">
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-base" style={{ backgroundColor: COLORS.accent, color: COLORS.white }}>{current}</div>
+        <div>
+          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{category}</p>
+          <p className="text-xs" style={{ color: COLORS.gray500 }}>全{total}問中</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: COLORS.successBg, color: COLORS.success }}>
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+        残り約{remainingTime}秒
+      </div>
+    </div>
+    <div className="flex gap-1">{Array.from({ length: total }).map((_, i) => <div key={i} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: i < current ? COLORS.accent : COLORS.gray200 }} />)}</div>
+  </div>
+);
+
+// ========================================
+// Simple Diagnosis
 // ========================================
 const SimpleDiagnosis = ({ onComplete, onBack }) => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [selectedValue, setSelectedValue] = useState(null);
 
-  // 【改善2】店舗数を先に聞き、複数店舗の場合の注記を動的に変更
   const questions = [
-    {
-      id: 'storeCount',
-      title: '店舗数',
-      subtitle: '現在運営している店舗の数を教えてください',
-      options: [
-        { value: 1, label: '1店舗' },
-        { value: 2, label: '2店舗' },
-        { value: 3, label: '3店舗' },
-        { value: 4.5, label: '4〜5店舗' },
-        { value: 8, label: '6〜10店舗' },
-        { value: 12, label: '11店舗以上' },
-      ]
-    },
-    {
-      id: 'revenue',
-      title: '年商（売上高）',
-      subtitle: '直近1年間の売上高を教えてください',
-      note: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗の合計でお答えください' : null,
-      options: [
-        { value: 10000000, label: '1,000万円未満' },
-        { value: 20000000, label: '1,000〜2,000万円' },
-        { value: 35000000, label: '2,000〜5,000万円' },
-        { value: 75000000, label: '5,000万〜1億円' },
-        { value: 150000000, label: '1億〜2億円' },
-        { value: 300000000, label: '2億〜5億円' },
-        { value: 500000000, label: '5億円以上' },
-      ]
-    },
-    {
-      id: 'profitMargin',
-      title: '営業利益率',
-      subtitle: '売上から全ての経費を引いた利益の割合',
-      note: () => '不明な場合は「平均的（5〜8%）」をお選びください',
-      options: [
-        { value: -15, label: '大幅赤字（-10%以下）' },
-        { value: -5, label: '赤字（-10〜0%）' },
-        { value: 1.5, label: 'ほぼ収支均衡（0〜3%）' },
-        { value: 4, label: 'やや低め（3〜5%）' },
-        { value: 6.5, label: '平均的（5〜8%）' },
-        { value: 10, label: '良好（8〜12%）' },
-        { value: 15, label: '優秀（12%以上）' },
-      ]
-    },
-    {
-      id: 'stability',
-      title: '収益の安定性',
-      subtitle: '過去2〜3年の売上・利益の傾向',
-      options: [
-        { value: 1.0, label: '大幅に増加している' },
-        { value: 0.5, label: '緩やかに増加している' },
-        { value: 0.2, label: '安定して推移している' },
-        { value: -0.3, label: '緩やかに減少している' },
-        { value: -0.7, label: '大幅に減少・不安定' },
-      ]
-    },
-    {
-      id: 'years',
-      title: '営業年数',
-      subtitle: '現在の業態での営業期間',
-      note: (storeCount) => storeCount > 1 ? '【複数店舗の場合】1号店を起点にお答えください' : null,
-      options: [
-        { value: -0.7, label: '1年未満' },
-        { value: -0.3, label: '1〜2年' },
-        { value: 0, label: '2〜3年' },
-        { value: 0.3, label: '3〜5年' },
-        { value: 0.5, label: '5〜7年' },
-        { value: 0.6, label: '7〜10年' },
-        { value: 0.7, label: '10〜15年' },
-        { value: 0.8, label: '15年以上' },
-      ]
-    },
-    {
-      id: 'ownerDependency',
-      title: '経営者の関与度',
-      subtitle: 'ご自身が不在でも店舗は運営できますか',
-      note: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全体としての関与度でお答えください' : null,
-      options: [
-        { value: -0.8, label: '毎日の稼働が必須' },
-        { value: -0.5, label: '週5〜6日の出勤が必要' },
-        { value: -0.2, label: '週3〜4日の出勤' },
-        { value: 0.3, label: '週1〜2日の出勤' },
-        { value: 0.6, label: 'ほぼ不要' },
-      ]
-    },
-    {
-      id: 'employees',
-      title: '従業員数',
-      subtitle: 'パート・アルバイトを含む全スタッフ',
-      note: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗の合計でお答えください' : null,
-      options: [
-        { value: 0.7, label: '0人（おひとりで運営）' },
-        { value: 0.9, label: '1人' },
-        { value: 1.0, label: '2〜3人' },
-        { value: 1.1, label: '4〜5人' },
-        { value: 1.15, label: '6〜8人' },
-        { value: 1.2, label: '9〜12人' },
-        { value: 1.25, label: '13人以上' },
-      ]
-    },
+    { id: 'storeCount', title: '店舗数', category: '店舗情報', subtitle: '現在運営している店舗数', options: [{ value: 1, label: '1店舗' }, { value: 2, label: '2店舗' }, { value: 3, label: '3店舗' }, { value: 4.5, label: '4〜5店舗' }, { value: 8, label: '6〜10店舗' }, { value: 12, label: '11店舗以上' }] },
+    { id: 'revenue', title: '年商（売上高）', category: '売上', subtitle: '直近1年間の売上高', note: (sc) => sc > 1 ? '全店舗の合計' : null, options: [{ value: 10000000, label: '1,000万円未満' }, { value: 20000000, label: '1,000〜2,000万円' }, { value: 35000000, label: '2,000〜5,000万円' }, { value: 75000000, label: '5,000万〜1億円' }, { value: 150000000, label: '1億〜2億円' }, { value: 300000000, label: '2億〜5億円' }, { value: 500000000, label: '5億円以上' }] },
+    { id: 'profitMargin', title: '営業利益率', category: '利益', subtitle: '売上に対する利益の割合', note: () => '不明な場合は「平均的」を選択', options: [{ value: -15, label: '大幅赤字（-10%以下）' }, { value: -5, label: '赤字（-10〜0%）' }, { value: 1.5, label: 'ほぼ収支均衡（0〜3%）' }, { value: 4, label: 'やや低め（3〜5%）' }, { value: 6.5, label: '平均的（5〜8%）' }, { value: 10, label: '良好（8〜12%）' }, { value: 15, label: '優秀（12%以上）' }] },
+    { id: 'stability', title: '売上の推移', category: '成長性', subtitle: '過去2〜3年の傾向', options: [{ value: 1.0, label: '大幅増加（年15%以上）' }, { value: 0.6, label: '増加傾向（年10〜15%）' }, { value: 0.3, label: 'やや増加（年5〜10%）' }, { value: 0, label: '横ばい（±5%程度）' }, { value: -0.4, label: 'やや減少（年5〜10%減）' }, { value: -0.7, label: '減少傾向（年10%以上減）' }] },
+    { id: 'years', title: '営業年数', category: '実績', subtitle: '現業態での営業期間', note: (sc) => sc > 1 ? '1号店を基準' : null, options: [{ value: -0.7, label: '1年未満' }, { value: -0.3, label: '1〜2年' }, { value: 0, label: '2〜3年' }, { value: 0.3, label: '3〜5年' }, { value: 0.5, label: '5〜7年' }, { value: 0.6, label: '7〜10年' }, { value: 0.7, label: '10〜15年' }, { value: 0.8, label: '15年以上' }] },
+    { id: 'ownerDependency', title: 'オーナーの関与度', category: '経営体制', subtitle: '不在でも運営できるか', options: [{ value: -0.8, label: '毎日の稼働が必須' }, { value: -0.5, label: '週5〜6日の出勤' }, { value: -0.2, label: '週3〜4日の出勤' }, { value: 0.3, label: '週1〜2日の出勤' }, { value: 0.6, label: 'ほぼ不要' }] },
+    { id: 'employees', title: '従業員数', category: '人員体制', subtitle: 'パート・アルバイト含む', note: (sc) => sc > 1 ? '全店舗の合計' : null, options: [{ value: 0.7, label: '0人（ひとりで運営）' }, { value: 0.9, label: '1人' }, { value: 1.0, label: '2〜3人' }, { value: 1.1, label: '4〜5人' }, { value: 1.15, label: '6〜8人' }, { value: 1.2, label: '9〜12人' }, { value: 1.25, label: '13人以上' }] },
   ];
 
-  const currentQuestion = questions[step];
+  const currentQ = questions[step];
   const storeCount = answers.storeCount || 1;
+  const remainingTime = Math.max(10, (questions.length - step) * 8);
 
   const handleSelect = (value) => {
-    const newAnswers = { ...answers, [currentQuestion.id]: value };
-    setAnswers(newAnswers);
-
-    if (step < questions.length - 1) {
-      setStep(step + 1);
-    } else {
-      onComplete(newAnswers, 'simple');
-    }
+    setSelectedValue(value);
+    setTimeout(() => {
+      const newAnswers = { ...answers, [currentQ.id]: value };
+      setAnswers(newAnswers);
+      setSelectedValue(null);
+      if (step < questions.length - 1) setStep(step + 1);
+      else onComplete(newAnswers, 'simple');
+    }, 200);
   };
 
-  const handleBack = () => {
-    if (step > 0) {
-      setStep(step - 1);
-    } else {
-      onBack();
-    }
-  };
-
-  const noteText = currentQuestion.note ? currentQuestion.note(storeCount) : null;
+  const noteText = currentQ.note ? currentQ.note(storeCount) : null;
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6" style={{ backgroundColor: COLORS.gray50 }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium" style={{ color: COLORS.navy }}>簡易診断</span>
-            <span className="text-sm" style={{ color: COLORS.gray500 }}>{step + 1} / {questions.length}</span>
-          </div>
-          <div className="h-2 rounded-full" style={{ backgroundColor: COLORS.gray200 }}>
-            <div 
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${((step + 1) / questions.length) * 100}%`, backgroundColor: COLORS.navy }}
-            />
-          </div>
-        </div>
-
-        {/* Question Card */}
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-sm mb-6 hover:opacity-70 transition-opacity"
-            style={{ color: COLORS.gray500 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            戻る
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+      <div className="max-w-xl mx-auto">
+        <SegmentedProgress current={step + 1} total={questions.length} category={currentQ.category} remainingTime={remainingTime} />
+        <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-7 border border-gray-100">
+          <button onClick={() => step > 0 ? setStep(step - 1) : onBack()} className="flex items-center gap-1 text-sm mb-4 hover:opacity-70" style={{ color: COLORS.gray500 }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7" /></svg>戻る
           </button>
-
-          <h2 className="text-2xl font-bold mb-2" style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}>
-            {currentQuestion.title}
-          </h2>
-          <p className="mb-4" style={{ color: COLORS.gray600 }}>
-            {currentQuestion.subtitle}
-          </p>
-          
-          {/* 【改善2】複数店舗の場合の注記を表示 */}
-          {noteText && (
-            <div 
-              className="mb-6 p-3 rounded-lg text-sm"
-              style={{ backgroundColor: COLORS.yellowLight, color: COLORS.gray700 }}
-            >
-              {noteText}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleSelect(option.value)}
-                className="w-full text-left p-4 rounded-lg border-2 transition-all duration-200 hover:border-navy-500"
-                style={{ 
-                  borderColor: COLORS.gray200,
-                  backgroundColor: COLORS.white
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = COLORS.navy;
-                  e.currentTarget.style.backgroundColor = COLORS.gray50;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = COLORS.gray200;
-                  e.currentTarget.style.backgroundColor = COLORS.white;
-                }}
-              >
-                <span className="font-medium" style={{ color: COLORS.navyDark }}>{option.label}</span>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>{currentQ.title}</h2>
+          <p className="text-sm mb-4" style={{ color: COLORS.gray600 }}>{currentQ.subtitle}</p>
+          {noteText && <div className="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" style={{ backgroundColor: COLORS.warningBg, color: COLORS.warning }}><svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" /></svg>{noteText}</div>}
+          <div className="space-y-2">
+            {currentQ.options.map((opt, i) => (
+              <button key={i} onClick={() => handleSelect(opt.value)} className="w-full text-left p-3 rounded-xl border-2 transition-all" style={{ borderColor: selectedValue === opt.value ? COLORS.accent : COLORS.gray200, backgroundColor: selectedValue === opt.value ? '#eff6ff' : COLORS.white }}>
+                <span className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{opt.label}</span>
               </button>
             ))}
           </div>
@@ -1168,226 +796,77 @@ const SimpleDiagnosis = ({ onComplete, onBack }) => {
 };
 
 // ========================================
-// 詳細診断コンポーネント
+// Detailed Diagnosis（クイック選択肢大幅増加）
 // ========================================
 const DetailedDiagnosis = ({ onComplete, onBack }) => {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({});
 
-  // 【改善2】店舗数を最初に聞く
-  // 【改善3】業態を7つに拡張
   const questions = [
-    { 
-      key: 'storeCount', 
-      type: 'input', 
-      question: '店舗数を教えてください', 
-      unit: '店舗', 
-      placeholder: '例: 1',
-      note: 'この数値に基づいて、以降の質問の入力方法が案内されます'
-    },
-    { 
-      key: 'businessType', 
-      type: 'select', 
-      question: '業態を教えてください', 
-      options: [
-        { value: 'izakaya', label: '居酒屋・バー', description: 'リピーター重視、夜間営業中心' },
-        { value: 'restaurant', label: 'レストラン・食堂', description: 'ランチ・ディナー営業' },
-        { value: 'cafe', label: 'カフェ・喫茶', description: '軽食・ドリンク中心' },
-        { value: 'fastfood', label: 'ファストフード・テイクアウト', description: '回転率重視、低単価' },
-        { value: 'specialty', label: '専門店（焼肉・寿司・ラーメン等）', description: '特定ジャンルに特化' },
-        { value: 'delivery', label: 'デリバリー・ゴーストキッチン', description: 'デリバリー専門、実店舗なし/最小' },
-        { value: 'catering', label: '給食・社食・弁当', description: 'BtoB向け、安定収益型' },
-      ]
-    },
-    { 
-      key: 'annualRevenue', 
-      type: 'input', 
-      question: '年商（売上高）を教えてください', 
-      unit: '万円', 
-      placeholder: '例: 5000',
-      noteFunc: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗の合計でご入力ください' : null
-    },
-    { 
-      key: 'operatingProfit', 
-      type: 'input', 
-      question: '年間の営業利益を教えてください', 
-      unit: '万円', 
-      placeholder: '例: 500', 
-      note: '税引前利益から支払利息を除いた金額。赤字の場合はマイナスで入力',
-      noteFunc: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗の合計でご入力ください' : null
-    },
-    { 
-      key: 'cash', 
-      type: 'input', 
-      question: '現預金残高を教えてください', 
-      unit: '万円', 
-      placeholder: '例: 300',
-      noteFunc: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗・事業全体の合計でご入力ください' : null
-    },
-    { 
-      key: 'debt', 
-      type: 'input', 
-      question: '借入金残高を教えてください', 
-      unit: '万円', 
-      placeholder: '例: 100',
-      noteFunc: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全店舗・事業全体の合計でご入力ください' : null
-    },
-    { 
-      key: 'revenueTrend', 
-      type: 'select', 
-      question: '直近3年間の売上推移を教えてください', 
-      options: [
-        { value: 'growing', label: '増加傾向（年10%以上成長）', description: '毎年売上が伸びている' },
-        { value: 'stable', label: '横ばい（±10%程度）', description: 'ほぼ一定の売上を維持' },
-        { value: 'declining', label: '減少傾向（年10%以上減少）', description: '売上が減少している' },
-      ]
-    },
-    { 
-      key: 'ownerDependency', 
-      type: 'select', 
-      question: 'オーナーの店舗運営への関与度を教えてください', 
-      noteFunc: (storeCount) => storeCount > 1 ? '【複数店舗の場合】全体としての関与度でお答えください' : null,
-      options: [
-        { value: 'low', label: '低い', description: '現場にはほぼ入らない。店長・スタッフに任せている' },
-        { value: 'medium', label: '中程度', description: '週に数回は現場に入る。主要な判断は自分で行う' },
-        { value: 'high', label: '高い', description: 'ほぼ毎日現場に入る。自分がいないと回らない' },
-      ]
-    },
-    { 
-      key: 'yearsInBusiness', 
-      type: 'input', 
-      question: '現業態での営業年数を教えてください', 
-      unit: '年', 
-      placeholder: '例: 5', 
-      note: '複数店舗の場合は1号店を基準' 
-    },
+    { key: 'storeCount', type: 'input', category: '店舗情報', question: '店舗数', unit: '店舗', placeholder: '1', quickValues: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30] },
+    { key: 'businessType', type: 'select', category: '業態', question: '業態', options: [{ value: 'izakaya', label: '居酒屋・バー' }, { value: 'restaurant', label: 'レストラン・食堂' }, { value: 'cafe', label: 'カフェ・喫茶' }, { value: 'fastfood', label: 'ファストフード' }, { value: 'specialty', label: '専門店（焼肉・寿司・ラーメン等）' }, { value: 'delivery', label: 'デリバリー' }, { value: 'catering', label: '給食・弁当' }] },
+    { key: 'annualRevenue', type: 'input', category: '売上', question: '年商（売上高）', unit: '万円', placeholder: '5000', quickValues: [500, 1000, 2000, 3000, 5000, 7000, 10000, 15000, 20000, 30000] },
+    { key: 'operatingProfit', type: 'input', category: '利益', question: '年間の営業利益', unit: '万円', placeholder: '500', note: '赤字はマイナス入力', quickValues: [-500, -100, 0, 100, 200, 300, 500, 700, 1000, 2000, 3000] },
+    { key: 'cash', type: 'input', category: '財務', question: '現預金残高', unit: '万円', placeholder: '300', quickValues: [0, 50, 100, 200, 300, 500, 700, 1000, 2000, 3000] },
+    { key: 'debt', type: 'input', category: '財務', question: '借入金残高', unit: '万円', placeholder: '100', quickValues: [0, 100, 300, 500, 1000, 2000, 3000, 5000, 10000] },
+    { key: 'revenueTrend', type: 'select', category: '成長性', question: '直近3年間の売上推移', options: [{ value: 'growing_high', label: '大幅増加（年15%以上）' }, { value: 'growing', label: '増加傾向' }, { value: 'stable', label: '横ばい' }, { value: 'declining', label: '減少傾向' }] },
+    { key: 'ownerDependency', type: 'select', category: '経営体制', question: 'オーナーの関与度', options: [{ value: 'very_low', label: 'ほぼなし（月1〜2回程度）' }, { value: 'low', label: '低い（週1〜2日）' }, { value: 'medium', label: '中程度（週3〜4日）' }, { value: 'high', label: '高い（週5〜6日）' }, { value: 'very_high', label: '非常に高い（毎日必須）' }] },
+    { key: 'yearsInBusiness', type: 'input', category: '実績', question: '営業年数', unit: '年', placeholder: '5', quickValues: [1, 2, 3, 4, 5, 7, 10, 15, 20, 30] },
   ];
 
-  const currentQuestion = questions[step];
-  const storeCount = parseInt(formData.storeCount) || 1;
+  const currentQ = questions[step];
+  const remainingTime = Math.max(15, (questions.length - step) * 12);
 
-  const handleInputChange = (value) => {
-    setFormData({ ...formData, [currentQuestion.key]: value });
-  };
-
-  const handleNext = () => {
-    if (step < questions.length - 1) {
-      setStep(step + 1);
-    } else {
-      onComplete(formData, 'detailed');
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 0) {
-      setStep(step - 1);
-    } else {
-      onBack();
-    }
-  };
-
-  // 動的な注記を取得
-  const dynamicNote = currentQuestion.noteFunc ? currentQuestion.noteFunc(storeCount) : null;
+  const handleInputChange = (value) => setFormData({ ...formData, [currentQ.key]: value });
+  const handleQuickValue = (value) => setFormData({ ...formData, [currentQ.key]: String(value) });
+  const handleNext = () => { if (step < questions.length - 1) setStep(step + 1); else onComplete(formData, 'detailed'); };
+  const handleBack = () => { if (step > 0) setStep(step - 1); else onBack(); };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6" style={{ backgroundColor: COLORS.gray50 }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium" style={{ color: COLORS.navy }}>詳細診断</span>
-            <span className="text-sm" style={{ color: COLORS.gray500 }}>{step + 1} / {questions.length}</span>
-          </div>
-          <div className="h-2 rounded-full" style={{ backgroundColor: COLORS.gray200 }}>
-            <div 
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${((step + 1) / questions.length) * 100}%`, backgroundColor: COLORS.navy }}
-            />
-          </div>
-        </div>
-
-        {/* Question Card */}
-        <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-sm mb-6 hover:opacity-70 transition-opacity"
-            style={{ color: COLORS.gray500 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            戻る
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+      <div className="max-w-xl mx-auto">
+        <SegmentedProgress current={step + 1} total={questions.length} category={currentQ.category} remainingTime={remainingTime} />
+        <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-7 border border-gray-100">
+          <button onClick={handleBack} className="flex items-center gap-1 text-sm mb-4 hover:opacity-70" style={{ color: COLORS.gray500 }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7" /></svg>戻る
           </button>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>{currentQ.question}</h2>
+          {currentQ.note && <p className="text-sm mb-3" style={{ color: COLORS.gray500 }}>{currentQ.note}</p>}
 
-          <h2 className="text-2xl font-bold mb-4" style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}>
-            {currentQuestion.question}
-          </h2>
-          
-          {/* 固定の注記 */}
-          {currentQuestion.note && (
-            <p className="text-sm mb-4" style={{ color: COLORS.gray500 }}>
-              {currentQuestion.note}
-            </p>
-          )}
-          
-          {/* 【改善2】複数店舗の場合の動的注記 */}
-          {dynamicNote && (
-            <div 
-              className="mb-6 p-3 rounded-lg text-sm"
-              style={{ backgroundColor: COLORS.yellowLight, color: COLORS.gray700 }}
-            >
-              {dynamicNote}
-            </div>
-          )}
-
-          {currentQuestion.type === 'input' ? (
+          {currentQ.type === 'input' ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <input
-                  type="number"
-                  value={formData[currentQuestion.key] || ''}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder={currentQuestion.placeholder}
-                  className="flex-1 px-4 py-3 rounded-lg border-2 text-lg transition-colors focus:outline-none"
-                  style={{ borderColor: COLORS.gray200 }}
-                  onFocus={(e) => e.target.style.borderColor = COLORS.navy}
-                  onBlur={(e) => e.target.style.borderColor = COLORS.gray200}
-                />
-                <span className="text-lg font-medium" style={{ color: COLORS.gray600 }}>
-                  {currentQuestion.unit}
-                </span>
+              {currentQ.quickValues && (
+                <div>
+                  <p className="text-xs mb-2" style={{ color: COLORS.gray500 }}>よく使われる数値（タップで選択）</p>
+                  <div className="flex flex-wrap gap-2">
+                    {currentQ.quickValues.map((val) => (
+                      <button key={val} onClick={() => handleQuickValue(val)} className="px-3 py-2 rounded-lg text-sm font-medium transition-all" style={{ backgroundColor: formData[currentQ.key] === String(val) ? COLORS.accent : COLORS.gray100, color: formData[currentQ.key] === String(val) ? COLORS.white : COLORS.gray700 }}>
+                        {formatNumber(val)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <p className="text-xs mb-2 flex items-center gap-1" style={{ color: COLORS.gray500 }}>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  直接入力も可能です
+                </p>
+                <div className="relative">
+                  <input type="text" inputMode="numeric" value={formatNumber(formData[currentQ.key]) || ''} onChange={(e) => handleInputChange(parseFormattedNumber(e.target.value))} placeholder={currentQ.placeholder}
+                    className="w-full px-4 py-3 pr-14 rounded-xl border-2 text-base focus:outline-none" style={{ borderColor: COLORS.gray200 }} onFocus={(e) => e.target.style.borderColor = COLORS.accent} onBlur={(e) => e.target.style.borderColor = COLORS.gray200} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: COLORS.gray500 }}>{currentQ.unit}</span>
+                </div>
               </div>
-              <button
-                onClick={handleNext}
-                disabled={!formData[currentQuestion.key]}
-                className="w-full py-4 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                style={{ 
-                  backgroundColor: formData[currentQuestion.key] ? COLORS.navy : COLORS.gray300,
-                  color: COLORS.white
-                }}
-              >
-                次へ
+              <button onClick={handleNext} disabled={!formData[currentQ.key]} className="w-full py-3 rounded-xl font-medium text-sm disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: formData[currentQ.key] ? COLORS.accent : COLORS.gray300, color: COLORS.white }}>
+                次へ<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M13 7l5 5-5 5M6 12h12" /></svg>
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    handleInputChange(option.value);
-                    setTimeout(handleNext, 200);
-                  }}
-                  className="w-full text-left p-4 rounded-lg border-2 transition-all duration-200"
-                  style={{ 
-                    borderColor: formData[currentQuestion.key] === option.value ? COLORS.navy : COLORS.gray200,
-                    backgroundColor: formData[currentQuestion.key] === option.value ? COLORS.gray50 : COLORS.white
-                  }}
-                >
-                  <span className="font-medium block" style={{ color: COLORS.navyDark }}>{option.label}</span>
-                  {option.description && (
-                    <span className="text-sm" style={{ color: COLORS.gray500 }}>{option.description}</span>
-                  )}
+            <div className="space-y-2">
+              {currentQ.options.map((opt, i) => (
+                <button key={i} onClick={() => { handleInputChange(opt.value); setTimeout(handleNext, 200); }} className="w-full text-left p-3 rounded-xl border-2 transition-all" style={{ borderColor: formData[currentQ.key] === opt.value ? COLORS.accent : COLORS.gray200, backgroundColor: formData[currentQ.key] === opt.value ? '#eff6ff' : COLORS.white }}>
+                  <span className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{opt.label}</span>
                 </button>
               ))}
             </div>
@@ -1399,17 +878,10 @@ const DetailedDiagnosis = ({ onComplete, onBack }) => {
 };
 
 // ========================================
-// 評価計算ロジック
+// Calculation
 // ========================================
-const calculateValuation = (data, type) => {
-  if (type === 'simple') {
-    return calculateSimpleValuation(data);
-  } else {
-    return calculateDetailedValuation(data);
-  }
-};
+const calculateValuation = (data, type) => type === 'simple' ? calculateSimpleValuation(data) : calculateDetailedValuation(data);
 
-// 簡易診断の計算
 const calculateSimpleValuation = (data) => {
   const revenue = data.revenue || 0;
   const profitMarginPercent = data.profitMargin || 0;
@@ -1420,49 +892,29 @@ const calculateSimpleValuation = (data) => {
   const storeCount = data.storeCount || 1;
 
   const operatingProfit = revenue * (profitMarginPercent / 100);
-  
-  // 基本倍率（年買法ベース：3年）
-  let baseMultiple = 3.0;
-  baseMultiple += stability;
-  baseMultiple += years;
-  baseMultiple += ownerDependency;
+  let baseMultiple = 3.0 + stability + years + ownerDependency;
   baseMultiple = Math.max(0.5, Math.min(5.5, baseMultiple));
-
-  // 店舗数による調整
   if (storeCount >= 8) baseMultiple += 0.5;
   else if (storeCount >= 3) baseMultiple += 0.3;
   else if (storeCount >= 2) baseMultiple += 0.15;
 
   const goodwill = Math.max(0, operatingProfit * baseMultiple);
-  const netAsset = 0; // 簡易診断では純資産は考慮しない
-  
-  const baseValue = goodwill * employees;
-  
-  // 売上規模による調整
-  let revenueMultiplier = 1.0;
-  if (revenue >= 300000000) revenueMultiplier = 1.15;
-  else if (revenue >= 100000000) revenueMultiplier = 1.08;
-  else if (revenue >= 50000000) revenueMultiplier = 1.0;
-  else revenueMultiplier = 0.9;
+  let revenueMultiplier = revenue >= 300000000 ? 1.15 : revenue >= 100000000 ? 1.08 : revenue >= 50000000 ? 1.0 : 0.9;
+  const estimatedValue = Math.max(0, goodwill * employees * revenueMultiplier);
+  const minValue = revenue * 0.1;
 
-  const estimatedValue = Math.max(0, baseValue * revenueMultiplier);
-  const minValue = revenue * 0.1; // 最低保証（売上の10%）
+  let percentile = 50;
+  if (profitMarginPercent >= 10) percentile += 20;
+  else if (profitMarginPercent >= 6) percentile += 10;
+  else if (profitMarginPercent < 0) percentile -= 20;
+  if (stability >= 0.5) percentile += 10;
+  else if (stability < 0) percentile -= 10;
+  percentile = Math.max(10, Math.min(90, percentile));
 
-  return {
-    low: Math.round(Math.max(minValue, estimatedValue * 0.7)),
-    mid: Math.round(Math.max(minValue, estimatedValue)),
-    high: Math.round(Math.max(minValue, estimatedValue * 1.3)),
-    method: 'simple',
-    details: {
-      revenue,
-      operatingProfit,
-      baseMultiple,
-      goodwill,
-    }
-  };
+  const midValue = Math.max(minValue, estimatedValue);
+  return { low: Math.round(midValue * 0.75), mid: Math.round(midValue), high: Math.round(midValue * 1.25), method: 'simple', percentile };
 };
 
-// 詳細診断の計算（3手法）
 const calculateDetailedValuation = (data) => {
   const annualRevenue = (parseFloat(data.annualRevenue) || 0) * 10000;
   const operatingProfit = (parseFloat(data.operatingProfit) || 0) * 10000;
@@ -1470,371 +922,331 @@ const calculateDetailedValuation = (data) => {
   const debt = (parseFloat(data.debt) || 0) * 10000;
   const storeCount = parseInt(data.storeCount) || 1;
   const yearsInBusiness = parseFloat(data.yearsInBusiness) || 0;
-  
-  // 調整係数
-  let adjustmentFactor = 1.0;
-  
-  // 売上推移による調整
-  if (data.revenueTrend === 'growing') adjustmentFactor *= 1.15;
-  else if (data.revenueTrend === 'declining') adjustmentFactor *= 0.85;
-  
-  // オーナー依存度による調整
-  if (data.ownerDependency === 'low') adjustmentFactor *= 1.1;
-  else if (data.ownerDependency === 'high') adjustmentFactor *= 0.85;
-  
-  // 営業年数による調整
-  if (yearsInBusiness >= 10) adjustmentFactor *= 1.1;
-  else if (yearsInBusiness >= 5) adjustmentFactor *= 1.05;
-  else if (yearsInBusiness < 2) adjustmentFactor *= 0.9;
+  const businessType = data.businessType || 'restaurant';
 
-  // 店舗数による調整
-  if (storeCount >= 5) adjustmentFactor *= 1.15;
+  let adjustmentFactor = 1.0;
+  const trendFactors = { 'growing_high': 1.25, 'growing': 1.15, 'stable': 1.0, 'declining': 0.85 };
+  adjustmentFactor *= trendFactors[data.revenueTrend] || 1.0;
+  const ownerFactors = { 'very_low': 1.2, 'low': 1.1, 'medium': 1.0, 'high': 0.9, 'very_high': 0.75 };
+  adjustmentFactor *= ownerFactors[data.ownerDependency] || 1.0;
+  if (yearsInBusiness >= 15) adjustmentFactor *= 1.15;
+  else if (yearsInBusiness >= 10) adjustmentFactor *= 1.1;
+  else if (yearsInBusiness >= 5) adjustmentFactor *= 1.05;
+  else if (yearsInBusiness < 2) adjustmentFactor *= 0.85;
+  if (storeCount >= 10) adjustmentFactor *= 1.2;
+  else if (storeCount >= 5) adjustmentFactor *= 1.15;
   else if (storeCount >= 3) adjustmentFactor *= 1.1;
   else if (storeCount >= 2) adjustmentFactor *= 1.05;
 
-  // 【改善1】推定値使用のフラグ
-  const usesEstimatedDepreciation = true; // 減価償却費は常に推定
-  const estimatedDepreciation = annualRevenue * 0.04; // 売上の4%と推定
+  const industryMultiples = { 'specialty': 4.0, 'izakaya': 3.5, 'restaurant': 3.5, 'cafe': 3.2, 'fastfood': 3.0, 'delivery': 2.8, 'catering': 4.2 };
+  const industryMultiple = industryMultiples[businessType] || 3.5;
+  const depreciationRate = businessType === 'delivery' ? 0.02 : 0.04;
+  const estimatedDepreciation = annualRevenue * depreciationRate;
 
-  // ===== 1. DCF法 =====
-  const fcf = operatingProfit * 0.85; // 税・設備投資控除後
-  const wacc = 0.08;
-  const growthRate = 0.02;
-  const forecastYears = 5;
-
+  const taxRate = 0.30;
+  const nopat = operatingProfit * (1 - taxRate);
+  const wacc = 0.10;
+  const growthRate = 0.005;
   let dcfValue = 0;
-  for (let t = 1; t <= forecastYears; t++) {
-    dcfValue += (fcf * Math.pow(1 + growthRate, t)) / Math.pow(1 + wacc, t);
-  }
-  const terminalValue = (fcf * Math.pow(1 + growthRate, forecastYears + 1)) / (wacc - growthRate);
-  dcfValue += terminalValue / Math.pow(1 + wacc, forecastYears);
+  for (let t = 1; t <= 5; t++) dcfValue += (nopat * Math.pow(1 + growthRate, t)) / Math.pow(1 + wacc, t);
+  dcfValue += (nopat * Math.pow(1 + growthRate, 6)) / (wacc - growthRate) / Math.pow(1 + wacc, 5);
   dcfValue = Math.max(0, dcfValue * adjustmentFactor);
 
-  // ===== 2. 時価純資産法 =====
   const netAsset = cash - debt;
-  const goodwillYears = 3;
+  let goodwillYears = yearsInBusiness >= 10 ? 4 : yearsInBusiness >= 5 ? 3 : yearsInBusiness >= 2 ? 2 : 1;
   const goodwill = Math.max(0, operatingProfit * goodwillYears);
   const netAssetValue = Math.max(0, (netAsset + goodwill) * adjustmentFactor);
 
-  // ===== 3. マルチプル法 =====
   const ebitda = operatingProfit + estimatedDepreciation;
-  const evEbitdaMultiple = 3.5;
-  const evRevenueMultiple = 0.5;
-
-  let multipleValue;
-  if (operatingProfit > 0) {
-    multipleValue = ebitda * evEbitdaMultiple * adjustmentFactor;
-  } else {
-    multipleValue = annualRevenue * evRevenueMultiple * adjustmentFactor;
-  }
+  let multipleValue = operatingProfit > 0 ? ebitda * industryMultiple * adjustmentFactor : annualRevenue * 0.4 * adjustmentFactor;
   multipleValue = Math.max(0, multipleValue);
 
-  // ===== 総合評価額 =====
-  let totalValue;
-  if (operatingProfit > 0) {
-    totalValue = dcfValue * 0.4 + netAssetValue * 0.3 + multipleValue * 0.3;
-  } else {
-    totalValue = netAssetValue * 0.5 + multipleValue * 0.5;
-  }
+  const methodValues = [dcfValue, netAssetValue, multipleValue].filter(v => v > 0);
+  const graphMax = methodValues.length > 0 ? Math.max(...methodValues) : annualRevenue * 0.5;
+  const graphMin = methodValues.length > 0 ? Math.min(...methodValues) : annualRevenue * 0.1;
 
-  // 最低保証
-  const minValue = annualRevenue * 0.1;
-  totalValue = Math.max(minValue, totalValue);
+  let totalValue = operatingProfit > 0 ? dcfValue * 0.4 + netAssetValue * 0.3 + multipleValue * 0.3 : netAssetValue * 0.5 + multipleValue * 0.5;
+  totalValue = Math.max(annualRevenue * 0.08, totalValue);
+
+  let percentile = 50;
+  const profitMargin = annualRevenue > 0 ? (operatingProfit / annualRevenue) * 100 : 0;
+  if (profitMargin >= 12) percentile += 25;
+  else if (profitMargin >= 8) percentile += 15;
+  else if (profitMargin >= 5) percentile += 5;
+  else if (profitMargin < 0) percentile -= 20;
+  if (data.revenueTrend === 'growing_high') percentile += 15;
+  else if (data.revenueTrend === 'growing') percentile += 10;
+  else if (data.revenueTrend === 'declining') percentile -= 15;
+  percentile = Math.max(5, Math.min(95, percentile));
 
   return {
-    low: Math.round(totalValue * 0.8),
-    mid: Math.round(totalValue),
-    high: Math.round(totalValue * 1.2),
-    method: 'detailed',
-    usesEstimatedValues: usesEstimatedDepreciation,
+    low: Math.round(totalValue * 0.85), mid: Math.round(totalValue), high: Math.round(totalValue * 1.15),
+    graphMin: Math.round(graphMin), graphMax: Math.round(graphMax),
+    method: 'detailed', percentile,
     details: {
-      dcf: {
-        value: Math.round(dcfValue),
-        fcf: Math.round(fcf),
-        wacc: wacc * 100,
-        growthRate: growthRate * 100,
-      },
-      netAsset: {
-        value: Math.round(netAssetValue),
-        netAsset: Math.round(netAsset),
-        goodwill: Math.round(goodwill),
-        goodwillYears,
-      },
-      multiple: {
-        value: Math.round(multipleValue),
-        ebitda: Math.round(ebitda),
-        multiple: operatingProfit > 0 ? evEbitdaMultiple : evRevenueMultiple,
-        method: operatingProfit > 0 ? 'EV/EBITDA' : 'EV/売上高',
-        estimatedDepreciation: Math.round(estimatedDepreciation),
-      },
-      adjustmentFactor: Math.round(adjustmentFactor * 100) / 100,
+      dcf: { value: Math.round(dcfValue) },
+      netAsset: { value: Math.round(netAssetValue), goodwillYears },
+      multiple: { value: Math.round(multipleValue), method: operatingProfit > 0 ? 'EV/EBITDA' : 'EV/売上高' },
     }
   };
 };
 
-// 通貨フォーマット
-const formatCurrency = (value) => {
-  if (value >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}億円`;
-  } else if (value >= 10000) {
-    return `${Math.round(value / 10000).toLocaleString()}万円`;
-  }
-  return `${value.toLocaleString()}円`;
+const getEvaluationComment = (percentile) => {
+  if (percentile >= 75) return { text: '買い手から高い関心が期待できる水準', color: COLORS.success };
+  if (percentile >= 55) return { text: '売却交渉を有利に進められる水準', color: COLORS.success };
+  if (percentile >= 35) return { text: '市場での売却が十分に見込める水準', color: COLORS.accent };
+  return { text: '条件次第で売却の可能性がある水準', color: COLORS.gray500 };
 };
 
 // ========================================
-// 結果画面
+// Note紹介（サムネイル画像使用）
 // ========================================
-const ResultPage = ({ result, onRestart }) => {
-  const { low, mid, high, method, details, usesEstimatedValues } = result;
+const NotePromotion = () => (
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="p-5 text-center border-b border-gray-100">
+      <p className="text-xs tracking-widest mb-1" style={{ color: COLORS.gray500 }}>Recommended Article</p>
+      <h3 className="text-lg font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>売却を成功させるために</h3>
+      <p className="text-sm mt-2" style={{ color: COLORS.gray600 }}>飲食店M&Aの経験者が、売却成功のポイントをわかりやすく解説しています。</p>
+    </div>
+    <a href="https://note.com/kei_senpai/n/ne00ffee62562" target="_blank" rel="noopener noreferrer" className="block">
+      <img 
+        src={NOTE_THUMBNAIL_URL} 
+        alt="飲食店売却成功の教科書" 
+        className="w-full h-auto"
+        onError={(e) => {
+          e.target.style.display = 'none';
+        }}
+      />
+    </a>
+    <div className="p-4 text-center">
+      <a href="https://note.com/kei_senpai/n/ne00ffee62562" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium text-sm" style={{ backgroundColor: COLORS.accent, color: COLORS.white }}>
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+        noteで記事を読む
+      </a>
+    </div>
+  </div>
+);
+
+// ========================================
+// Result Page
+// ========================================
+const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed }) => {
+  const { low, mid, high, graphMin, graphMax, method, details, percentile } = result;
+  const [copied, setCopied] = useState(false);
+  const evaluation = getEvaluationComment(percentile);
+
+  const handleCopy = async () => {
+    const text = `【のれん診断結果】\n推定売却価格: ${formatCurrency(mid)}\n想定レンジ: ${formatCurrency(low)} 〜 ${formatCurrency(high)}\n\n詳しくは👉 https://noren-shindan.jp`;
+    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) {}
+  };
+
+  const handleLineShare = () => {
+    const text = encodeURIComponent(`【のれん診断結果】推定売却価格: ${formatCurrency(mid)}\n飲食店の売却価格を無料で診断👉`);
+    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.jp')}&text=${text}`, '_blank');
+  };
+
+  const handleXShare = () => {
+    const text = encodeURIComponent(`飲食店の売却価格を診断してみた！推定売却価格: ${formatCurrency(mid)}\n無料で診断できる👉`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.jp')}`, '_blank');
+  };
+
+  const simpleGraphMin = Math.round(low * 0.6);
+  const simpleGraphMax = Math.round(high * 1.4);
+  const rangeWidth = (method === 'detailed' ? ((graphMax || simpleGraphMax) - (graphMin || simpleGraphMin)) : (simpleGraphMax - simpleGraphMin)) || 1;
+  const gMin = method === 'detailed' ? (graphMin || simpleGraphMin) : simpleGraphMin;
+  const gMax = method === 'detailed' ? (graphMax || simpleGraphMax) : simpleGraphMax;
+  const lowPct = Math.max(5, Math.min(95, ((low - gMin) / rangeWidth) * 100));
+  const highPct = Math.max(5, Math.min(95, ((high - gMin) / rangeWidth) * 100));
+  const midPct = Math.max(5, Math.min(95, ((mid - gMin) / rangeWidth) * 100));
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6" style={{ backgroundColor: COLORS.gray50 }}>
-      <div className="max-w-3xl mx-auto">
-        {/* 結果ヘッダー */}
-        <div className="text-center mb-8">
-          <p className="text-sm tracking-widest mb-2" style={{ color: COLORS.navy }}>
-            Valuation Result
-          </p>
-          <h1 
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-          >
-            診断結果
-          </h1>
-        </div>
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-4 sm:px-6" style={{ backgroundColor: COLORS.gray50 }}>
+      <div className="max-w-2xl mx-auto">
+        <header className="text-center mb-5">
+          <p className="text-xs font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>RESULT</p>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>診断結果</h1>
+          <p className="text-xs mt-1" style={{ color: COLORS.gray500 }}>{method === 'simple' ? '簡易診断' : '詳細診断（3手法による精密評価）'}</p>
+        </header>
 
-        {/* メイン結果カード */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8 border border-gray-100">
-          <p className="text-center mb-4" style={{ color: COLORS.gray600 }}>
-            あなたの飲食店の推定売却価格は
-          </p>
+        <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-7 mb-5">
+          <div className="flex items-center justify-center mb-4 py-2 px-4 rounded-full mx-auto w-fit" style={{ backgroundColor: `${evaluation.color}15` }}>
+            <span className="text-sm font-medium" style={{ color: evaluation.color }}>{evaluation.text}</span>
+          </div>
+
+          <p className="text-center text-sm mb-2" style={{ color: COLORS.gray600 }}>推定売却価格</p>
           <div className="text-center mb-6">
-            <span 
-              className="text-5xl md:text-6xl font-bold"
-              style={{ color: COLORS.navy, fontFamily: "'Noto Serif JP', serif" }}
-            >
-              {formatCurrency(mid)}
-            </span>
-          </div>
-          <div className="flex justify-center items-center gap-4 text-sm" style={{ color: COLORS.gray500 }}>
-            <span>想定レンジ: {formatCurrency(low)} 〜 {formatCurrency(high)}</span>
+            <span className="text-4xl sm:text-5xl font-bold" style={{ color: COLORS.primary, fontFamily: "'Noto Serif JP', serif" }}>{formatCurrency(mid)}</span>
           </div>
 
-          {/* 【改善1】推定値使用の注記 */}
-          {usesEstimatedValues && (
-            <div 
-              className="mt-6 p-4 rounded-lg text-sm"
-              style={{ backgroundColor: COLORS.yellowLight, color: COLORS.gray700 }}
-            >
-              <p className="font-medium mb-1">推定値について</p>
-              <p>
-                減価償却費は「売上高×4%」で推定しています。より正確な診断結果を得るには、
-                実際の減価償却費、設備・内装の簿価、敷金・保証金をM&A専門家にご相談ください。
-              </p>
+          <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: COLORS.gray50 }}>
+            <p className="text-center text-sm font-medium mb-4" style={{ color: COLORS.gray700 }}>想定売却価格レンジ</p>
+            
+            <div className="relative mb-1 h-5">
+              <div className="absolute transform -translate-x-1/2 text-center" style={{ left: `${lowPct}%` }}>
+                <span className="text-xs font-bold whitespace-nowrap" style={{ color: COLORS.accent }}>{formatCurrency(low)}</span>
+              </div>
+              <div className="absolute transform -translate-x-1/2 text-center" style={{ left: `${highPct}%` }}>
+                <span className="text-xs font-bold whitespace-nowrap" style={{ color: COLORS.accent }}>{formatCurrency(high)}</span>
+              </div>
             </div>
-          )}
+            
+            <div className="relative h-3">
+              <div className="absolute h-full border-l-2 border-dashed" style={{ left: `${lowPct}%`, borderColor: COLORS.accent }} />
+              <div className="absolute h-full border-l-2 border-dashed" style={{ left: `${highPct}%`, borderColor: COLORS.accent }} />
+            </div>
+            
+            <div className="relative">
+              <div className="h-6 rounded-full relative overflow-visible" style={{ backgroundColor: COLORS.gray200 }}>
+                <div className="absolute h-full rounded-full" style={{ left: `${lowPct}%`, width: `${Math.max(1, highPct - lowPct)}%`, background: `linear-gradient(90deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)` }} />
+              </div>
+              <div className="absolute top-0 transform -translate-x-1/2" style={{ left: `${midPct}%` }}>
+                <div className="w-6 h-6 rounded-full bg-white border-4 shadow-lg" style={{ borderColor: COLORS.accent }} />
+              </div>
+            </div>
+            
+            <div className="flex justify-between mt-3 text-xs" style={{ color: COLORS.gray400 }}>
+              <span>{formatCurrency(gMin)}</span>
+              <span>{formatCurrency(gMax)}</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl mb-5" style={{ backgroundColor: '#eff6ff' }}>
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: COLORS.accent }}>
+                <p className="text-lg font-bold">{100 - percentile}%</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold mb-0.5" style={{ color: COLORS.primaryDark }}>評価ランキング：上位 {100 - percentile}%</p>
+                <p className="text-xs" style={{ color: COLORS.gray600 }}>同規模・同業態100店舗中{100 - percentile}番目の評価</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button onClick={method === 'detailed' ? onRestartDetailed : onRestart} className="w-full py-2.5 rounded-xl font-medium text-sm border-2" style={{ borderColor: COLORS.gray300, color: COLORS.gray600 }}>もう一度診断する</button>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button onClick={handleCopy} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: COLORS.gray100, color: COLORS.gray700 }}>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                {copied ? 'コピー完了！' : '結果をコピー'}
+              </button>
+              <button onClick={handleLineShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{ backgroundColor: '#06C755' }}>
+                LINEで共有
+              </button>
+              <button onClick={handleXShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{ backgroundColor: COLORS.gray900 }}>
+                𝕏 共有
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* 詳細診断の場合：3手法の内訳 */}
-        {method === 'detailed' && details && (
-          <div className="bg-white rounded-xl shadow-sm p-8 mb-8 border border-gray-100">
-            <h2 
-              className="text-xl font-bold mb-6"
-              style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-            >
-              3つの評価手法による内訳
-            </h2>
-            
-            <div className="space-y-6">
-              {/* DCF法 */}
-              <div className="p-4 rounded-lg" style={{ backgroundColor: COLORS.gray50 }}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium" style={{ color: COLORS.navyDark }}>DCF法</span>
-                  <span className="font-bold" style={{ color: COLORS.navy }}>{formatCurrency(details.dcf.value)}</span>
-                </div>
-                <p className="text-sm" style={{ color: COLORS.gray500 }}>
-                  FCF: {formatCurrency(details.dcf.fcf)} / WACC: {details.dcf.wacc}% / 永続成長率: {details.dcf.growthRate}%
-                </p>
+        {method === 'simple' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-5 mb-5">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eff6ff' }}>
+                <svg className="w-5 h-5" style={{ color: COLORS.accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
-
-              {/* 時価純資産法 */}
-              <div className="p-4 rounded-lg" style={{ backgroundColor: COLORS.gray50 }}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium" style={{ color: COLORS.navyDark }}>時価純資産法</span>
-                  <span className="font-bold" style={{ color: COLORS.navy }}>{formatCurrency(details.netAsset.value)}</span>
-                </div>
-                <p className="text-sm" style={{ color: COLORS.gray500 }}>
-                  純資産: {formatCurrency(details.netAsset.netAsset)} + 営業権({details.netAsset.goodwillYears}年分): {formatCurrency(details.netAsset.goodwill)}
-                </p>
-              </div>
-
-              {/* マルチプル法 */}
-              <div className="p-4 rounded-lg" style={{ backgroundColor: COLORS.gray50 }}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium" style={{ color: COLORS.navyDark }}>マルチプル法</span>
-                  <span className="font-bold" style={{ color: COLORS.navy }}>{formatCurrency(details.multiple.value)}</span>
-                </div>
-                <p className="text-sm" style={{ color: COLORS.gray500 }}>
-                  {details.multiple.method}: {formatCurrency(details.multiple.ebitda)} × {details.multiple.multiple}倍
-                  {details.multiple.estimatedDepreciation > 0 && (
-                    <span className="block mt-1" style={{ color: COLORS.gray400 }}>
-                      ※ 減価償却費は{formatCurrency(details.multiple.estimatedDepreciation)}と推定
-                    </span>
-                  )}
-                </p>
+              <div className="flex-1">
+                <h3 className="text-base font-bold mb-1" style={{ color: COLORS.primaryDark }}>より精密な診断をご希望ですか？</h3>
+                <p className="text-xs mb-3" style={{ color: COLORS.gray600 }}>詳細診断では、DCF法・時価純資産法・マルチプル法の3手法で精密評価します。</p>
+                <button onClick={onDetailedDiagnosis} className="w-full py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2" style={{ backgroundColor: COLORS.accent, color: COLORS.white }}>
+                  詳細診断を受ける（約2分）<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M13 7l5 5-5 5M6 12h12" /></svg>
+                </button>
               </div>
             </div>
-
-            <p className="mt-4 text-sm" style={{ color: COLORS.gray500 }}>
-              調整係数: {details.adjustmentFactor}（売上推移・オーナー依存度・営業年数・店舗数を考慮）
-            </p>
           </div>
         )}
 
-        {/* note記事への誘導バナー */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 overflow-hidden">
-          <p 
-            className="text-center text-sm tracking-widest mb-4"
-            style={{ color: COLORS.navy }}
-          >
-            Recommended Article
-          </p>
-          <h3 
-            className="text-xl font-bold mb-4 text-center"
-            style={{ color: COLORS.navyDark, fontFamily: "'Noto Serif JP', serif" }}
-          >
-            売却を成功させるために
-          </h3>
-          <p className="text-center mb-6" style={{ color: COLORS.gray600 }}>
-            飲食店M&Aの経験者が、売却成功のポイントをわかりやすく解説しています。
-          </p>
-          
-          {/* noteバナー画像 */}
-          <a 
-            href="https://note.com/kei_senpai/n/ne00ffee62562"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] mb-6"
-          >
-            <img 
-              src="/images/note-banner.png"
-              alt="飲食店売却成功の教科書 - noteで読む"
-              className="w-full h-auto"
-              style={{ aspectRatio: '1200/630' }}
-            />
-          </a>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="https://note.com/kei_senpai/n/ne00ffee62562"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded font-medium transition-all duration-200"
-              style={{ backgroundColor: COLORS.navy, color: COLORS.white }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              noteで記事を読む
-            </a>
-            <button
-              onClick={onRestart}
-              className="px-8 py-4 rounded font-medium transition-all duration-200 border-2"
-              style={{ borderColor: COLORS.gray300, color: COLORS.gray600 }}
-            >
-              もう一度診断する
-            </button>
+        {method === 'detailed' && details && (
+          <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
+            <h2 className="text-base font-bold mb-4" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>3つの評価手法による内訳</h2>
+            <div className="space-y-3">
+              {[
+                { name: 'DCF法', value: details.dcf.value, desc: '将来キャッシュフローを現在価値に割り引いて算出' },
+                { name: '時価純資産法', value: details.netAsset.value, desc: `純資産 + 営業権${details.netAsset.goodwillYears}年分` },
+                { name: 'マルチプル法', value: details.multiple.value, desc: `${details.multiple.method}倍率を適用` },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: COLORS.gray50 }}>
+                  <div className="flex-1">
+                    <span className="text-sm font-bold" style={{ color: COLORS.primaryDark }}>{item.name}</span>
+                    <p className="text-xs" style={{ color: COLORS.gray500 }}>{item.desc}</p>
+                  </div>
+                  <span className="text-xl sm:text-2xl font-bold ml-3" style={{ color: COLORS.accent }}>{formatCurrency(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
+          <h2 className="text-base font-bold mb-4" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>売却に向けた次のステップ</h2>
+          <div className="space-y-3">
+            {[{ step: 1, title: '売却準備を始める', desc: '財務資料の整理、店舗の強みの明確化' }, { step: 2, title: '専門家に相談する', desc: 'M&A仲介会社への相談で市場価格を確認' }, { step: 3, title: '買い手を探す', desc: '複数の候補との交渉で最適な条件を引き出す' }].map((item) => (
+              <div key={item.step} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full text-white flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ backgroundColor: COLORS.accent }}>{item.step}</div>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{item.title}</p>
+                  <p className="text-xs" style={{ color: COLORS.gray500 }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
+        <NotePromotion />
       </div>
     </div>
   );
 };
 
 // ========================================
-// メインアプリケーション
+// Main App
 // ========================================
 const NorenDiagnosis = () => {
-  const [view, setView] = useState('landing'); // landing, type-select, simple, detailed, result
-  const [diagnosisType, setDiagnosisType] = useState(null);
+  const [view, setView] = useState('landing');
   const [result, setResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStartDiagnosis = () => {
-    setView('type-select');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSelectType = (type) => {
-    setDiagnosisType(type);
-    setView(type);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleComplete = (data, type) => {
-    const calculatedResult = calculateValuation(data, type);
-    setResult(calculatedResult);
+  const handleStartDiagnosis = () => { setView('simple'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleStartDetailedDiagnosis = () => { setView('detailed'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  
+  const handleComplete = async (data, type) => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setResult(calculateValuation(data, type));
+    setIsLoading(false);
     setView('result');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleRestart = () => {
-    setView('landing');
-    setDiagnosisType(null);
-    setResult(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBackToTypeSelect = () => {
-    setView('type-select');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const handleRestart = () => { setView('landing'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleRestartDetailed = () => { setView('detailed'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleBackToLanding = () => { setView('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleLogoClick = () => { setView('landing'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleContactClick = () => { setView('contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
-    <div className="font-sans antialiased">
-      <SEOHead />
-      <Header onGoHome={handleRestart} />
-      
-      {view === 'landing' && (
-        <>
-          <HeroSection onStartDiagnosis={handleStartDiagnosis} />
-          <DiagnosisTypeSection onSelectType={handleSelectType} />
-          <FAQSection />
-          <Footer />
-        </>
-      )}
-      
-      {view === 'type-select' && (
-        <>
-          <div className="pt-20" />
-          <DiagnosisTypeSection onSelectType={handleSelectType} />
-          <Footer />
-        </>
-      )}
-      
-      {view === 'simple' && (
-        <SimpleDiagnosis 
-          onComplete={handleComplete} 
-          onBack={handleBackToTypeSelect}
-        />
-      )}
-      
-      {view === 'detailed' && (
-        <DetailedDiagnosis 
-          onComplete={handleComplete} 
-          onBack={handleBackToTypeSelect}
-        />
-      )}
-      
-      {view === 'result' && result && (
-        <>
-          <ResultPage result={result} onRestart={handleRestart} />
-          <Footer />
-        </>
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className="font-sans antialiased" style={{ color: COLORS.gray900 }}>
+        <SEOHead />
+        <Header onStartDiagnosis={handleStartDiagnosis} onLogoClick={handleLogoClick} />
+        {isLoading && <LoadingScreen message="診断結果を計算中..." />}
+        
+        {view === 'landing' && (
+          <main>
+            <HeroSection onStartDiagnosis={handleStartDiagnosis} />
+            <FeaturesSection />
+            <MethodSection />
+            <ReviewsSection />
+            <FAQSection />
+          </main>
+        )}
+        {view === 'simple' && <SimpleDiagnosis onComplete={handleComplete} onBack={handleBackToLanding} />}
+        {view === 'detailed' && <DetailedDiagnosis onComplete={handleComplete} onBack={handleBackToLanding} />}
+        {view === 'result' && result && <ResultPage result={result} onRestart={handleRestart} onDetailedDiagnosis={handleStartDetailedDiagnosis} onRestartDetailed={handleRestartDetailed} />}
+        {view === 'contact' && <ContactPage onBack={handleBackToLanding} />}
+        <Footer onContactClick={handleContactClick} />
+      </div>
+    </ErrorBoundary>
   );
 };
 
