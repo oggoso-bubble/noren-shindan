@@ -373,7 +373,7 @@ const HeroSection = ({ onStartDiagnosis }) => (
               </div>
 
               {/* PC本体 */}
-              <div className="relative mt-12 sm:mt-14" style={{ width: '380px', maxWidth: '80vw' }}>
+              <div className="relative mt-12 sm:mt-14" style={{ width: '400px', maxWidth: '82vw' }}>
                 <div className="rounded-xl overflow-hidden" style={{ boxShadow: '0 40px 70px -20px rgba(15, 23, 42, 0.32), 0 24px 40px -24px rgba(30, 58, 95, 0.30), 0 0 0 1px rgba(15, 23, 42, 0.05)' }}>
                   {/* ブラウザバー（macOS風ライトクローム） */}
                   <div className="px-3.5 py-2 flex items-center gap-2" style={{ background: 'linear-gradient(180deg, #f8f9fb 0%, #eceef1 100%)', borderBottom: '1px solid rgba(15, 23, 42, 0.07)' }}>
@@ -437,19 +437,22 @@ const HeroSection = ({ onStartDiagnosis }) => (
 
               {/* スマホ（薄ベゼル・大角丸・柔らかい影の現行機） */}
               <div className="absolute -right-4 sm:-right-9 bottom-0 sm:bottom-1 w-[5.75rem] sm:w-28 rounded-[1.5rem] p-[3px] transform rotate-[4deg]" style={{ background: 'linear-gradient(155deg, #4b5563 0%, #1e293b 42%, #0b1220 100%)', boxShadow: '0 34px 60px -16px rgba(15, 23, 42, 0.48), 0 16px 32px -14px rgba(15, 23, 42, 0.32), inset 0 1.5px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(15, 23, 42, 0.45)' }}>
-                <div className="bg-white rounded-[1.3rem] overflow-hidden" style={{ minHeight: '220px' }}>
+                <div className="bg-white rounded-[1.3rem] overflow-hidden flex flex-col" style={{ minHeight: '220px' }}>
                   {/* アプリバー（ダイナミックアイランド風ノッチ入り） */}
-                  <div className="h-8 relative flex flex-col items-center justify-end pb-1" style={{ background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)` }}>
+                  <div className="h-8 relative flex flex-col items-center justify-end pb-1 flex-shrink-0" style={{ background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)` }}>
                     <div className="absolute top-1 left-1/2 -translate-x-1/2 w-7 h-[5px] rounded-full" style={{ backgroundColor: 'rgba(2, 6, 23, 0.9)' }} />
                     <span className="text-white text-[7px] font-bold tracking-wider">のれん診断</span>
                   </div>
-                  {/* コンテンツ */}
-                  <div className="p-2 pb-3">
+                  {/* コンテンツ（実際の結果画面を縦いっぱいに再現） */}
+                  <div className="px-2.5 pt-2 pb-2.5 flex-1 flex flex-col">
+                    <div className="flex justify-center mb-1">
+                      <span className="text-[5px] font-medium px-2 py-[1px] rounded-full" style={{ backgroundColor: COLORS.successBg, color: COLORS.success }}>買い手から高い関心が期待できる水準</span>
+                    </div>
                     <p className="text-[6px] text-center mb-0.5" style={{ color: COLORS.gray500 }}>推定売却価格</p>
                     <p className="text-base font-bold text-center tracking-tight" style={{ color: COLORS.accent, fontFamily: "'Noto Serif JP', serif" }}>
                       9,250<span className="text-[8px] ml-0.5">万円</span>
                     </p>
-                    <div className="mt-2 px-0.5">
+                    <div className="mt-1.5 px-0.5">
                       <div className="relative">
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: COLORS.gray200, boxShadow: 'inset 0 0.5px 1.5px rgba(15, 23, 42, 0.1)' }}>
                           <div className="h-full rounded-full" style={{ width: '70%', background: `linear-gradient(90deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)` }} />
@@ -463,11 +466,19 @@ const HeroSection = ({ onStartDiagnosis }) => (
                         <span>1.06億</span>
                       </div>
                     </div>
-                    <div className="mt-2.5 pt-1.5 border-t border-gray-100">
+                    <div className="mt-2 pt-1.5 border-t border-gray-100">
                       <div className="grid grid-cols-3 text-center divide-x divide-gray-100">
                         <div className="px-0.5"><p className="text-[6px]" style={{ color: COLORS.gray400 }}>DCF</p><p className="text-[7px] font-bold" style={{ color: COLORS.primary, fontFamily: "'Noto Serif JP', serif" }}>9,800万</p></div>
                         <div className="px-0.5"><p className="text-[6px]" style={{ color: COLORS.gray400 }}>純資産</p><p className="text-[7px] font-bold" style={{ color: COLORS.primary, fontFamily: "'Noto Serif JP', serif" }}>8,500万</p></div>
                         <div className="px-0.5"><p className="text-[6px]" style={{ color: COLORS.gray400 }}>マルチ</p><p className="text-[7px] font-bold" style={{ color: COLORS.primary, fontFamily: "'Noto Serif JP', serif" }}>9,450万</p></div>
+                      </div>
+                    </div>
+                    <div className="mt-auto pt-2">
+                      <div className="rounded-md py-1 text-center text-[6px] font-bold border" style={{ borderColor: COLORS.accent, color: COLORS.accent }}>もう一度診断する</div>
+                      <div className="flex gap-1 justify-center mt-1">
+                        <span className="px-1.5 py-[2px] rounded text-[5px] font-medium" style={{ backgroundColor: COLORS.gray100, color: COLORS.gray600 }}>コピー</span>
+                        <span className="px-1.5 py-[2px] rounded text-[5px] font-medium text-white" style={{ backgroundColor: '#06C755' }}>LINE</span>
+                        <span className="px-1.5 py-[2px] rounded text-[5px] font-medium text-white" style={{ backgroundColor: COLORS.gray900 }}>𝕏</span>
                       </div>
                     </div>
                   </div>
