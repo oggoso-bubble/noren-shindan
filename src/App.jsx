@@ -374,22 +374,22 @@ const HeroSection = ({ onStartDiagnosis }) => (
 
               {/* PC本体 */}
               <div className="relative mt-12 sm:mt-14" style={{ width: '340px', maxWidth: '80vw' }}>
-                <div className="rounded-t-xl p-1.5" style={{ background: 'linear-gradient(180deg, #3b4a5e 0%, #1e293b 55%, #0f172a 100%)', boxShadow: '0 32px 64px -16px rgba(15, 23, 42, 0.4), 0 16px 32px -16px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12)' }}>
-                  {/* ブラウザバー */}
-                  <div className="rounded-t-lg px-3 py-1.5 flex items-center gap-1.5" style={{ background: 'linear-gradient(180deg, #334155 0%, #293548 100%)' }}>
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ff5f57', boxShadow: 'inset 0 0.5px 1px rgba(255,255,255,0.4)' }} />
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#febc2e', boxShadow: 'inset 0 0.5px 1px rgba(255,255,255,0.4)' }} />
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#28c840', boxShadow: 'inset 0 0.5px 1px rgba(255,255,255,0.4)' }} />
-                    <div className="flex-1 mx-3">
-                      <div className="rounded-full text-center text-[9px] py-0.5 px-2 flex items-center justify-center gap-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.55)', color: '#94a3b8' }}>
-                        <svg className="w-2 h-2 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#28c840' }}><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
+                <div className="rounded-xl overflow-hidden" style={{ boxShadow: '0 40px 70px -20px rgba(15, 23, 42, 0.32), 0 24px 40px -24px rgba(30, 58, 95, 0.30), 0 0 0 1px rgba(15, 23, 42, 0.05)' }}>
+                  {/* ブラウザバー（macOS風ライトクローム） */}
+                  <div className="px-3.5 py-2 flex items-center gap-2" style={{ background: 'linear-gradient(180deg, #f8f9fb 0%, #eceef1 100%)', borderBottom: '1px solid rgba(15, 23, 42, 0.07)' }}>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ff5f57' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#febc2e' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#28c840' }} />
+                    <div className="flex-1 ml-2">
+                      <div className="rounded-md text-center text-[9px] py-1 px-2 flex items-center justify-center gap-1" style={{ backgroundColor: '#ffffff', color: COLORS.gray500, boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.06)' }}>
+                        <svg className="w-2 h-2 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: COLORS.gray400 }}><path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/></svg>
                         noren-shindan.vercel.app
                       </div>
                     </div>
                   </div>
                   {/* 画面コンテンツ */}
-                  <div className="p-4" style={{ minHeight: '160px', background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' }}>
-                    <div className="pb-2 mb-3 text-center border-b border-gray-100">
+                  <div className="p-5" style={{ minHeight: '168px', background: '#ffffff' }}>
+                    <div className="pb-2.5 mb-3.5 text-center border-b border-gray-100">
                       <p className="text-[10px] tracking-[0.25em] font-medium" style={{ color: COLORS.gray500 }}>診断結果レポート</p>
                       <div className="w-8 h-0.5 mx-auto mt-1.5 rounded-full" style={{ background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.accentLight})` }} />
                     </div>
@@ -431,16 +431,13 @@ const HeroSection = ({ onStartDiagnosis }) => (
                     </div>
                   </div>
                 </div>
-                {/* PCスタンド */}
-                <div className="relative">
-                  <div className="h-4 mx-auto" style={{ width: '35%', background: 'linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%)' }} />
-                  <div className="h-2 mx-auto" style={{ width: '50%', background: 'linear-gradient(180deg, #94a3b8 0%, #64748b 100%)', borderRadius: '0 0 6px 6px', boxShadow: '0 10px 20px -6px rgba(15, 23, 42, 0.35)' }} />
-                </div>
+                {/* 接地影（スタンドを廃し浮遊感を安定させる） */}
+                <div className="mx-auto mt-4" style={{ width: '78%', height: '22px', background: 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.16) 0%, rgba(15, 23, 42, 0.05) 45%, transparent 72%)' }} />
               </div>
 
-              {/* スマホ（薄ベゼル・大きめ角丸の現行機比率） */}
-              <div className="absolute -right-4 sm:-right-8 bottom-0 sm:bottom-2 w-[5.75rem] sm:w-28 rounded-[1.35rem] p-[3px] transform rotate-3" style={{ background: 'linear-gradient(160deg, #475569 0%, #1e293b 45%, #0f172a 100%)', boxShadow: '0 24px 48px -12px rgba(15, 23, 42, 0.5), 0 10px 24px -10px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25)' }}>
-                <div className="bg-white rounded-[1.15rem] overflow-hidden" style={{ minHeight: '170px' }}>
+              {/* スマホ（薄ベゼル・大角丸・柔らかい影の現行機） */}
+              <div className="absolute -right-4 sm:-right-9 bottom-0 sm:bottom-1 w-[5.75rem] sm:w-28 rounded-[1.5rem] p-[3px] transform rotate-[4deg]" style={{ background: 'linear-gradient(155deg, #4b5563 0%, #1e293b 42%, #0b1220 100%)', boxShadow: '0 34px 60px -16px rgba(15, 23, 42, 0.48), 0 16px 32px -14px rgba(15, 23, 42, 0.32), inset 0 1.5px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(15, 23, 42, 0.45)' }}>
+                <div className="bg-white rounded-[1.3rem] overflow-hidden" style={{ minHeight: '175px' }}>
                   {/* アプリバー（ダイナミックアイランド風ノッチ入り） */}
                   <div className="h-8 relative flex flex-col items-center justify-end pb-1" style={{ background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)` }}>
                     <div className="absolute top-1 left-1/2 -translate-x-1/2 w-7 h-[5px] rounded-full" style={{ backgroundColor: 'rgba(2, 6, 23, 0.9)' }} />
