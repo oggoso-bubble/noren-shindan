@@ -373,7 +373,7 @@ const HeroSection = ({ onStartDiagnosis }) => (
               </div>
 
               {/* PC本体 */}
-              <div className="relative mt-12 sm:mt-14" style={{ width: '340px', maxWidth: '80vw' }}>
+              <div className="relative mt-12 sm:mt-14" style={{ width: '380px', maxWidth: '80vw' }}>
                 <div className="rounded-xl overflow-hidden" style={{ boxShadow: '0 40px 70px -20px rgba(15, 23, 42, 0.32), 0 24px 40px -24px rgba(30, 58, 95, 0.30), 0 0 0 1px rgba(15, 23, 42, 0.05)' }}>
                   {/* ブラウザバー（macOS風ライトクローム） */}
                   <div className="px-3.5 py-2 flex items-center gap-2" style={{ background: 'linear-gradient(180deg, #f8f9fb 0%, #eceef1 100%)', borderBottom: '1px solid rgba(15, 23, 42, 0.07)' }}>
@@ -437,7 +437,7 @@ const HeroSection = ({ onStartDiagnosis }) => (
 
               {/* スマホ（薄ベゼル・大角丸・柔らかい影の現行機） */}
               <div className="absolute -right-4 sm:-right-9 bottom-0 sm:bottom-1 w-[5.75rem] sm:w-28 rounded-[1.5rem] p-[3px] transform rotate-[4deg]" style={{ background: 'linear-gradient(155deg, #4b5563 0%, #1e293b 42%, #0b1220 100%)', boxShadow: '0 34px 60px -16px rgba(15, 23, 42, 0.48), 0 16px 32px -14px rgba(15, 23, 42, 0.32), inset 0 1.5px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(15, 23, 42, 0.45)' }}>
-                <div className="bg-white rounded-[1.3rem] overflow-hidden" style={{ minHeight: '175px' }}>
+                <div className="bg-white rounded-[1.3rem] overflow-hidden" style={{ minHeight: '220px' }}>
                   {/* アプリバー（ダイナミックアイランド風ノッチ入り） */}
                   <div className="h-8 relative flex flex-col items-center justify-end pb-1" style={{ background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)` }}>
                     <div className="absolute top-1 left-1/2 -translate-x-1/2 w-7 h-[5px] rounded-full" style={{ backgroundColor: 'rgba(2, 6, 23, 0.9)' }} />
