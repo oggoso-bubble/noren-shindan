@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
 // ========================================
-// のれん診断 LP + 診断ツール v16
+// のれん診断 LP + 診断ツール v17
+// 【v17 変更点（2026-07-06 Phase 0改修: リード導線＋計測穴埋め）】
+// - 結果画面に「無料売却・撤退相談」CTA を新設（診断結果の金額・レンジ・業態を
+//   Googleフォームへ自動引き継ぎ）。PR表記（提携先紹介で対価を受け取る場合がある旨）を常設
+// - CONSULT_FORM.baseUrl が空の間は CTA 非表示（リンク切れを本番に出さない安全設計）
+// - GA4計測の穴埋め: 共有3種（コピー/LINE/X）に share イベント、CTA クリックに
+//   consult_cta_click、診断の設問進行に diagnosis_progress（完了率・離脱箇所の実測用）、
+//   diagnosis_complete に business_type（詳細診断のみ）
+// - index.html に OGP/Twitterカードを静的直書き（Xクローラー対策・別ファイル）
 // 【v16 変更点（2026-07-05 コンプライアンス是正＋計測修正）】
 // - 架空の実績表示を全廃（景表法・優良誤認リスクの除去）:
 //   「累計1,500件突破」バッジ／meta descriptionの「累計1,500件以上」／
@@ -41,6 +49,43 @@ const COLORS = {
 
 const LOGO_URL = 'https://raw.githubusercontent.com/oggoso-bubble/noren-shindan/main/public/images/logo.png?v=' + Date.now();
 const NOTE_THUMBNAIL_URL = '/images/note-banner.png';
+
+// ========================================
+// 無料相談フォーム（S2b需要検証・Googleフォーム）
+// baseUrl が空文字の間、結果画面の相談CTAは表示されない（リンク切れ防止）。
+// 設定手順: Googleフォーム編集画面右上「⋮」→「事前入力したURLを取得」で
+//   設問8（診断結果金額）に 999、設問3（業態）に 居酒屋・バー を入れて
+//   「リンクを取得」→ そのURL内の entry.XXXXXXXXX を下に転記する。
+// ========================================
+const CONSULT_FORM = {
+  baseUrl: '',        // 例: 'https://docs.google.com/forms/d/e/1FAIpQL.../viewform'
+  entryResult: '',    // 設問8「のれん診断の結果金額」の entry ID（例: 'entry.1234567890'）
+  entryBusiness: '',  // 設問3「業態」の entry ID
+};
+
+// 診断アプリの業態値 → フォーム設問3の選択肢ラベル（ラジオのprefillは完全一致が必要）
+const BUSINESS_TYPE_FORM_LABELS = {
+  izakaya: '居酒屋・バー',
+  restaurant: 'レストラン・食堂',
+  cafe: 'カフェ・喫茶',
+  specialty: 'ラーメン・焼肉等の専門店',
+  fastfood: 'その他',
+  delivery: 'その他',
+  catering: 'その他',
+};
+
+// 診断結果を引き継いだ相談フォームURLを組み立てる（baseUrl未設定なら null）
+const buildConsultFormUrl = (result) => {
+  if (!CONSULT_FORM.baseUrl) return null;
+  const params = new URLSearchParams({ usp: 'pp_url' });
+  if (CONSULT_FORM.entryResult && result) {
+    params.set(CONSULT_FORM.entryResult, `${formatCurrency(result.mid)}（想定レンジ ${formatCurrency(result.low)}〜${formatCurrency(result.high)}）`);
+  }
+  if (CONSULT_FORM.entryBusiness && result && result.businessType && BUSINESS_TYPE_FORM_LABELS[result.businessType]) {
+    params.set(CONSULT_FORM.entryBusiness, BUSINESS_TYPE_FORM_LABELS[result.businessType]);
+  }
+  return `${CONSULT_FORM.baseUrl}?${params.toString()}`;
+};
 
 // ========================================
 // ErrorBoundary
@@ -954,6 +999,8 @@ const SimpleDiagnosis = ({ onComplete, onBack }) => {
 
   const handleSelect = (value) => {
     setSelectedValue(value);
+    // 設問ごとの進行を記録（完了率・離脱箇所の実測用）
+    trackEvent('diagnosis_progress', { diagnosis_type: 'simple', step: step + 1, total: questions.length });
     setTimeout(() => {
       const newAnswers = { ...answers, [currentQ.id]: value };
       setAnswers(newAnswers);
@@ -1013,7 +1060,11 @@ const DetailedDiagnosis = ({ onComplete, onBack }) => {
 
   const handleInputChange = (value) => setFormData({ ...formData, [currentQ.key]: value });
   const handleQuickValue = (value) => setFormData({ ...formData, [currentQ.key]: String(value) });
-  const handleNext = () => { if (step < questions.length - 1) setStep(step + 1); else onComplete(formData, 'detailed'); };
+  const handleNext = () => {
+    // 設問ごとの進行を記録（完了率・離脱箇所の実測用）
+    trackEvent('diagnosis_progress', { diagnosis_type: 'detailed', step: step + 1, total: questions.length });
+    if (step < questions.length - 1) setStep(step + 1); else onComplete(formData, 'detailed');
+  };
   const handleBack = () => { if (step > 0) setStep(step - 1); else onBack(); };
 
   return (
@@ -1239,18 +1290,29 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
   const evaluation = getEvaluationComment(percentile);
 
   const handleCopy = async () => {
+    trackEvent('share', { method: 'copy', diagnosis_type: method });
     const text = `【のれん診断結果】\n推定売却価格: ${formatCurrency(mid)}\n想定レンジ: ${formatCurrency(low)} 〜 ${formatCurrency(high)}\n\n詳しくは👉 https://noren-shindan.vercel.app`;
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) {}
   };
 
   const handleLineShare = () => {
+    trackEvent('share', { method: 'line', diagnosis_type: method });
     const text = encodeURIComponent(`【のれん診断結果】推定売却価格: ${formatCurrency(mid)}\n飲食店の売却価格を無料で診断👉`);
     window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.vercel.app')}&text=${text}`, '_blank');
   };
 
   const handleXShare = () => {
+    trackEvent('share', { method: 'x', diagnosis_type: method });
     const text = encodeURIComponent(`飲食店の売却価格を診断してみた！推定売却価格: ${formatCurrency(mid)}\n無料で診断できる👉`);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.vercel.app')}`, '_blank');
+  };
+
+  // 無料相談CTA（CONSULT_FORM.baseUrl 未設定の間は非表示）
+  const consultFormUrl = buildConsultFormUrl(result);
+  const handleConsultClick = () => {
+    const params = { diagnosis_type: method, result_amount: mid };
+    if (result.businessType) params.business_type = result.businessType;
+    trackEvent('consult_cta_click', params);
   };
 
   const simpleGraphMin = Math.round(low * 0.6);
@@ -1324,6 +1386,18 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
               </div>
             </div>
           </div>
+
+          {consultFormUrl && (
+            <div className="mt-6 p-5 rounded-2xl text-center" style={{ backgroundColor: COLORS.successBg, border: `2px solid ${COLORS.success}` }}>
+              <p className="text-base font-bold mb-1" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>この結果をもとに、売却・撤退の進め方を無料で相談できます</p>
+              <p className="text-xs mb-4" style={{ color: COLORS.gray600 }}>診断結果を引き継いで、飲食店売却を経験した運営者がメールでお答えします（1営業日以内・営業なし）</p>
+              <a href={consultFormUrl} target="_blank" rel="noopener noreferrer" onClick={handleConsultClick} className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-sm text-white shadow-lg hover:shadow-xl transition-all" style={{ backgroundColor: COLORS.success }}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                無料で売却・撤退の相談をする
+              </a>
+              <p className="text-[10px] mt-3 leading-relaxed" style={{ color: COLORS.gray500 }}>※ご希望の場合のみ提携先（店舗買取・M&A事業者等）をご紹介します。紹介により運営者が対価を受け取る場合があります。</p>
+            </div>
+          )}
 
           <div className="space-y-4 mt-6">
             <button onClick={method === 'detailed' ? onRestartDetailed : onRestart} className="w-full py-3.5 rounded-xl font-bold text-sm border-2 shadow-sm hover:shadow transition-all flex items-center justify-center gap-2" style={{ borderColor: COLORS.accent, color: COLORS.accent, backgroundColor: COLORS.white }}>
@@ -1449,17 +1523,20 @@ const NorenDiagnosis = () => {
   const handleComplete = async (data, type) => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 800));
-    const calculatedResult = calculateValuation(data, type);
+    // 業態は相談フォームへの引き継ぎ・計測で使うため結果に含める（詳細診断のみ存在）
+    const calculatedResult = { ...calculateValuation(data, type), businessType: data.businessType || null };
     setResult(calculatedResult);
     setIsLoading(false);
     setView('result');
     // 診断完了イベント送信（診断タイプと結果金額を含む）
-    trackEvent('diagnosis_complete', { 
+    const completeParams = {
       diagnosis_type: type,
       result_amount: calculatedResult.mid,
       result_min: calculatedResult.low,
       result_max: calculatedResult.high
-    });
+    };
+    if (calculatedResult.businessType) completeParams.business_type = calculatedResult.businessType;
+    trackEvent('diagnosis_complete', completeParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
