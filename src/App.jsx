@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
 // ========================================
-// のれん診断 LP + 診断ツール v15
-// - ヘッダー：濃紺背景、「今すぐ無料診断」ボタン追加
-// - 上部バッジ削除
-// - メインコピー大きく左配置、右にPCイラスト
-// - 金額9,250万円、月桂樹デザイン改善
-// - 選ばれる理由：アウトラインイラスト
-// - 利用者の声：線画スタイル人物
-// - Note紹介：サムネイル画像使用
-// - サービス概要削除、運営情報削除
-// - 詳細診断：クイック選択肢大幅増加
+// のれん診断 LP + 診断ツール v16
+// 【v16 変更点（2026-07-05 コンプライアンス是正＋計測修正）】
+// - 架空の実績表示を全廃（景表法・優良誤認リスクの除去）:
+//   「累計1,500件突破」バッジ／meta descriptionの「累計1,500件以上」／
+//   JSON-LDのaggregateRating(4.8/1500)／架空の利用者の声4件
+// - 「利用者の声」→「運営者について」（実体験・事実ベース）に置換。X/note導線を追加
+// - Heroバッジは「飲食店売却を経験した元オーナーが開発」（事実）に変更
+// - 共有リンク・モックURLを未取得の noren-shindan.jp → noren-shindan.vercel.app に統一
+// - GA4 diagnosis_complete の送信フィールド修正（amount/min/max → mid/low/high 実在値）
+// 【v15まで】ヘッダー濃紺・メインコピー左配置・月桂樹・詳細診断クイック選択肢 等
 // ========================================
 
 const COLORS = {
@@ -80,7 +80,7 @@ const SEOHead = () => {
     };
     
     // 基本メタタグ
-    setMeta('description', '【完全無料・会員登録不要】飲食店・レストラン・カフェ・居酒屋の売却価格を最短60秒で無料診断。DCF法・時価純資産法・マルチプル法の3手法で精密評価。累計1,500件以上の診断実績。M&A・事業承継をお考えの飲食店オーナー様へ。');
+    setMeta('description', '【完全無料・会員登録不要】飲食店・レストラン・カフェ・居酒屋の売却価格を最短60秒で無料診断。DCF法・時価純資産法・マルチプル法の3手法で評価。飲食店売却を経験した元オーナーが開発。M&A・事業承継をお考えの飲食店オーナー様へ。');
     setMeta('keywords', '飲食店 売却, 飲食店 M&A, 飲食店 買取, レストラン売却, カフェ売却, 居酒屋売却, 店舗売却 価格, 飲食店 査定, 事業承継 飲食店, のれん代, 営業権, DCF法, 時価純資産法, マルチプル法');
     setMeta('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
     setMeta('author', 'のれん診断');
@@ -153,11 +153,6 @@ const SEOHead = () => {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "JPY"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "1500"
           }
         },
         {
@@ -304,9 +299,9 @@ const HeroSection = ({ onStartDiagnosis }) => (
                     <path d="M23 56 Q25 55, 26 57 Q25 59, 23 58 Q22 57, 23 56Z" fill="#fbbf24"/>
                   </svg>
                   <div className="bg-white px-4 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-lg border-2 border-amber-400 z-10">
-                    <p className="text-[9px] sm:text-[10px] text-amber-600 font-semibold text-center tracking-wide">累計診断数</p>
-                    <p className="text-base sm:text-lg font-bold text-center" style={{ color: COLORS.accent }}>
-                      1,500<span className="text-xs sm:text-sm ml-0.5">件突破</span>
+                    <p className="text-[9px] sm:text-[10px] text-amber-600 font-semibold text-center tracking-wide">飲食店売却を経験した</p>
+                    <p className="text-sm sm:text-base font-bold text-center whitespace-nowrap" style={{ color: COLORS.accent }}>
+                      元オーナーが開発
                     </p>
                   </div>
                 </div>
@@ -321,7 +316,7 @@ const HeroSection = ({ onStartDiagnosis }) => (
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     <div className="flex-1 mx-3">
-                      <div className="bg-gray-600 rounded text-center text-[9px] text-gray-400 py-0.5 px-2">noren-shindan.jp</div>
+                      <div className="bg-gray-600 rounded text-center text-[9px] text-gray-400 py-0.5 px-2">noren-shindan.vercel.app</div>
                     </div>
                   </div>
                   {/* 画面コンテンツ */}
@@ -622,114 +617,54 @@ const MethodSection = () => {
 };
 
 // ========================================
-// Reviews（線画スタイル人物イラスト）
+// Operator（運営者について・実体験ベース）
 // ========================================
-const ReviewsSection = () => {
-  const reviews = [
-    { 
-      rating: 5, 
-      text: '売却を考え始めた時に利用しました。60秒で概算がわかるので、まずは目安を知りたい方にぴったりです。', 
-      author: '居酒屋経営', 
-      area: '東京都', 
-      revenue: '年商3,000万円台',
-      avatar: (
-        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
-          <circle cx="32" cy="24" r="12" />
-          <path d="M20 22c0-8 6-14 12-14s12 6 12 14" />
-          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
-          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
-          <rect x="26" y="8" width="12" height="6" rx="2" fill="none" />
-        </svg>
-      )
-    },
-    { 
-      rating: 5, 
-      text: '他社の査定と比べても妥当な金額でした。無料でここまでわかるのは驚きです。', 
-      author: 'カフェオーナー', 
-      area: '大阪府', 
-      revenue: '年商1,500万円台',
-      avatar: (
-        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
-          <circle cx="32" cy="24" r="12" />
-          <path d="M20 20c4-6 10-8 16-6s10 8 8 16" />
-          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
-          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
-          <path d="M24 12c0-4 4-6 8-6s8 2 8 6" />
-        </svg>
-      )
-    },
-    { 
-      rating: 4, 
-      text: '詳細診断で3つの評価手法による内訳が見れるのが良い。専門家との相談前の準備に役立ちました。', 
-      author: 'ラーメン店経営', 
-      area: '神奈川県', 
-      revenue: '年商5,000万円台',
-      avatar: (
-        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
-          <circle cx="32" cy="24" r="12" />
-          <path d="M22 18h20c0 4-4 8-10 8s-10-4-10-8z" />
-          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
-          <circle cx="28" cy="24" r="1.5" fill="#3b82f6" stroke="none" />
-          <circle cx="36" cy="24" r="1.5" fill="#3b82f6" stroke="none" />
-          <path d="M28 30c2 2 6 2 8 0" strokeLinecap="round" />
-        </svg>
-      )
-    },
-    { 
-      rating: 5, 
-      text: '登録不要で何度でも試せるのが嬉しい。条件を変えてシミュレーションできます。', 
-      author: 'レストラン経営', 
-      area: '福岡県', 
-      revenue: '年商8,000万円台',
-      avatar: (
-        <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
-          <circle cx="32" cy="24" r="12" />
-          <path d="M24 16c2-4 6-6 8-6s6 2 8 6" />
-          <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
-          <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
-          <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
-          <path d="M20 44h24" strokeLinecap="round" />
-        </svg>
-      )
-    },
-  ];
+const OperatorSection = () => (
+  <section id="operator" className="py-16 sm:py-24 px-4 sm:px-6 bg-white">
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-10 sm:mb-14">
+        <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>OPERATOR</p>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>運営者について</h2>
+      </div>
 
-  return (
-    <section id="reviews" className="py-16 sm:py-24 px-4 sm:px-6 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16">
-          <p className="text-xs sm:text-sm font-semibold tracking-widest mb-2" style={{ color: COLORS.accent }}>REVIEWS</p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>利用者の声</h2>
+      <div className="bg-gray-50 rounded-2xl p-6 sm:p-8">
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-blue-50 p-1">
+            <svg viewBox="0 0 64 64" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth="1.2">
+              <circle cx="32" cy="24" r="12" />
+              <path d="M20 22c0-8 6-14 12-14s12 6 12 14" />
+              <path d="M16 56c0-12 8-20 16-20s16 8 16 20" />
+              <circle cx="28" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+              <circle cx="36" cy="22" r="1.5" fill="#3b82f6" stroke="none" />
+              <path d="M28 28c2 2 6 2 8 0" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-base font-bold" style={{ color: COLORS.primaryDark }}>けい先輩</p>
+            <p className="text-xs" style={{ color: COLORS.gray500 }}>飲食業界14年・自身の店舗をM&Aで売却</p>
+          </div>
         </div>
-        
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-          {reviews.map((r, i) => (
-            <div key={i} className="bg-gray-50 rounded-2xl p-5 sm:p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-blue-50 p-1">
-                  {r.avatar}
-                </div>
-                <div className="flex-1">
-                  <div className="flex gap-0.5 mb-1">
-                    {[1,2,3,4,5].map(s => <svg key={s} className="w-4 h-4" viewBox="0 0 24 24" fill={s <= r.rating ? '#fbbf24' : '#e5e7eb'}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>)}
-                  </div>
-                  <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>{r.author} / {r.area}</p>
-                  <p className="text-xs" style={{ color: COLORS.gray500 }}>{r.revenue}</p>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base leading-relaxed" style={{ color: COLORS.gray700 }}>{r.text}</p>
-            </div>
-          ))}
+
+        <div className="space-y-3 text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
+          <p>飲食業界に14年。複数店舗の運営を経て、自身の店舗をM&Aで売却しました。</p>
+          <p>売却を考え始めた当時、「自分の店がいくらで売れるのか」という目安すら分からず苦労しました。その経験から、オーナーの皆さまが専門家に相談する前の第一歩として使えるように、このツールを作りました。</p>
+          <p className="text-xs pt-1" style={{ color: COLORS.gray500 }}>※ 診断結果は3つの評価手法にもとづく参考値です。実際の売却価格を保証するものではありません。</p>
+        </div>
+
+        <div className="flex flex-wrap gap-3 mt-6">
+          <a href="https://x.com/kei_senpai_" target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('operator_x_click')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90" style={{ backgroundColor: COLORS.gray900 }}>
+            <span className="font-bold">𝕏</span>
+            売却の実体験を発信中
+          </a>
+          <a href="https://note.com/kei_senpai" target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('operator_note_click')} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90" style={{ backgroundColor: COLORS.gray100, color: COLORS.gray700 }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            noteで売却ノウハウを読む
+          </a>
         </div>
       </div>
-    </section>
-  );
-};
+    </div>
+  </section>
+);
 
 // ========================================
 // FAQ
@@ -1304,18 +1239,18 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
   const evaluation = getEvaluationComment(percentile);
 
   const handleCopy = async () => {
-    const text = `【のれん診断結果】\n推定売却価格: ${formatCurrency(mid)}\n想定レンジ: ${formatCurrency(low)} 〜 ${formatCurrency(high)}\n\n詳しくは👉 https://noren-shindan.jp`;
+    const text = `【のれん診断結果】\n推定売却価格: ${formatCurrency(mid)}\n想定レンジ: ${formatCurrency(low)} 〜 ${formatCurrency(high)}\n\n詳しくは👉 https://noren-shindan.vercel.app`;
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) {}
   };
 
   const handleLineShare = () => {
     const text = encodeURIComponent(`【のれん診断結果】推定売却価格: ${formatCurrency(mid)}\n飲食店の売却価格を無料で診断👉`);
-    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.jp')}&text=${text}`, '_blank');
+    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.vercel.app')}&text=${text}`, '_blank');
   };
 
   const handleXShare = () => {
     const text = encodeURIComponent(`飲食店の売却価格を診断してみた！推定売却価格: ${formatCurrency(mid)}\n無料で診断できる👉`);
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.jp')}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.vercel.app')}`, '_blank');
   };
 
   const simpleGraphMin = Math.round(low * 0.6);
@@ -1521,9 +1456,9 @@ const NorenDiagnosis = () => {
     // 診断完了イベント送信（診断タイプと結果金額を含む）
     trackEvent('diagnosis_complete', { 
       diagnosis_type: type,
-      result_amount: calculatedResult.amount,
-      result_min: calculatedResult.min,
-      result_max: calculatedResult.max
+      result_amount: calculatedResult.mid,
+      result_min: calculatedResult.low,
+      result_max: calculatedResult.high
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1562,7 +1497,7 @@ const NorenDiagnosis = () => {
             <HeroSection onStartDiagnosis={handleStartDiagnosis} />
             <FeaturesSection />
             <MethodSection />
-            <ReviewsSection />
+            <OperatorSection />
             <FAQSection />
           </main>
         )}
