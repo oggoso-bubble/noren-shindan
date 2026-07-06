@@ -1,11 +1,11 @@
-# robots.txt for noren-shindan.jp
-# https://noren-shindan.jp/robots.txt
+# robots.txt for noren-shindan.vercel.app
+# https://noren-shindan.vercel.app/robots.txt
 
 User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://noren-shindan.jp/sitemap.xml
+Sitemap: https://noren-shindan.vercel.app/sitemap.xml
 
 # Crawl-delay (optional, for polite crawling)
 Crawl-delay: 1
