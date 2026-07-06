@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
 // ========================================
-// のれん診断 LP + 診断ツール v17
+// のれん診断 LP + 診断ツール v18
+// 【v18 変更点（2026-07-06 品質是正: 誠実性・実務相場整合・UX/セキュリティ）】
+// - 結果画面の金額直下に免責・参考値注記を常設（従来は主動線で免責を一度も通らなかった）
+// - 裏付けデータのない「評価ランキング：上位◯%（100店舗中◯番目）」を削除。
+//   評価コメントも「入力値にもとづく参考」表現に緩和（優良誤認の予防）
+// - 診断ロジックを実務相場に整合（従来は小型店で実勢の2〜5倍の過大提示）:
+//   WACC 10%→15%／加重 DCF40%→25%・純資産法30%→45%（実務主流の年買法重視）／
+//   赤字店 年商×0.4→×0.12／オーナー依存の減額強化（very_high 0.75→0.55 等・簡易も同方向）／
+//   下限フロア 簡易10%→8%・詳細8%→5%
+// - 負数入力のNaNバグ修正（営業利益に「-」を入力すると NaN 表示になっていた）＋入力欄に aria-label
+// - 診断結果を sessionStorage に退避（リロード・誤操作の戻るで結果が全喪失していた）
+// - ロゴ/favicon を GitHub raw＋Date.now() → 自ドメイン配信＋固定バージョンに（毎回キャッシュ無効を解消）
+// - コントラスト是正（評価手法サブタイトルの薄い金色→濃色、グラフ端金額 gray400→gray600）
+// - vercel.json: Referrer-Policy / Permissions-Policy 追加・X-XSS-Protection を推奨値 0 に
 // 【v17 変更点（2026-07-06 Phase 0改修: リード導線＋計測穴埋め）】
 // - 結果画面に「無料売却・撤退相談」CTA を新設（診断結果の金額・レンジ・業態を
 //   Googleフォームへ自動引き継ぎ）。PR表記（提携先紹介で対価を受け取る場合がある旨）を常設
@@ -47,7 +60,8 @@ const COLORS = {
   white: '#ffffff',
 };
 
-const LOGO_URL = 'https://raw.githubusercontent.com/oggoso-bubble/noren-shindan/main/public/images/logo.png?v=' + Date.now();
+// 自ドメイン配信＋固定バージョン（GitHub raw＋Date.now()はCDNキャッシュを毎回無効化しLCPを悪化させていた）
+const LOGO_URL = '/images/logo.png?v=18';
 const NOTE_THUMBNAIL_URL = '/images/note-banner.png';
 
 // ========================================
@@ -57,10 +71,16 @@ const NOTE_THUMBNAIL_URL = '/images/note-banner.png';
 //   設問8（診断結果金額）に 999、設問3（業態）に 居酒屋・バー を入れて
 //   「リンクを取得」→ そのURL内の entry.XXXXXXXXX を下に転記する。
 // ========================================
+// 【2026-07-06 U決定により当面非公開】相談は受け付けない方針のため baseUrl を空にし
+// CTA非表示を維持。送客の入口として公開する際（文言は「相談」でなく「紹介申込」へ変更予定）は
+// 下記の結線済み実測値を戻すだけでよい:
+//   baseUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSeKqr2I0gFq6CNzucHN61p-t2n3s_UF0WPXySTvo9mnBo_dEw/viewform'
+//   entryResult: 'entry.1743293188'（設問8「のれん診断の結果金額」）
+//   entryBusiness: 'entry.3283125'（設問3「業態」）
 const CONSULT_FORM = {
-  baseUrl: '',        // 例: 'https://docs.google.com/forms/d/e/1FAIpQL.../viewform'
-  entryResult: '',    // 設問8「のれん診断の結果金額」の entry ID（例: 'entry.1234567890'）
-  entryBusiness: '',  // 設問3「業態」の entry ID
+  baseUrl: '',
+  entryResult: 'entry.1743293188',  // 設問8「のれん診断の結果金額」（GAS事前入力URLから転記 2026-07-06）
+  entryBusiness: 'entry.3283125',   // 設問3「業態」（同上）
 };
 
 // 診断アプリの業態値 → フォーム設問3の選択肢ラベル（ラジオのprefillは完全一致が必要）
@@ -161,7 +181,7 @@ const SEOHead = () => {
     const favicon = document.createElement('link');
     favicon.rel = 'icon';
     favicon.type = 'image/png';
-    favicon.href = 'https://raw.githubusercontent.com/oggoso-bubble/noren-shindan/main/public/images/logo.png?v=' + Date.now();
+    favicon.href = '/images/logo.png?v=18';
     document.head.appendChild(favicon);
     
     // Apple Touch Icon（iOS用）
@@ -169,7 +189,7 @@ const SEOHead = () => {
     if (appleIcon) appleIcon.remove();
     appleIcon = document.createElement('link');
     appleIcon.rel = 'apple-touch-icon';
-    appleIcon.href = 'https://raw.githubusercontent.com/oggoso-bubble/noren-shindan/main/public/images/logo.png?v=' + Date.now();
+    appleIcon.href = '/images/logo.png?v=18';
     document.head.appendChild(appleIcon);
     
     // 構造化データ（JSON-LD）
@@ -666,7 +686,7 @@ const MethodSection = () => {
             <div key={i} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 text-center hover:shadow-lg transition-shadow">
               <div className="flex justify-center mb-3">{m.icon}</div>
               <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: COLORS.primaryDark }}>{m.title}</h3>
-              <p className="text-xs sm:text-sm font-medium mb-3" style={{ color: '#d4a853' }}>{m.subtitle}</p>
+              <p className="text-xs sm:text-sm font-medium mb-3" style={{ color: '#8a6d1f' }}>{m.subtitle}</p>
               <p className="text-sm leading-relaxed" style={{ color: COLORS.gray600 }}>{m.description}</p>
             </div>
           ))}
@@ -863,15 +883,16 @@ const PrivacyPage = ({ onBack }) => (
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center" style={{ color: COLORS.primaryDark, fontFamily: "'Noto Serif JP', serif" }}>プライバシーポリシー</h1>
         
         <div className="prose prose-sm max-w-none text-sm leading-relaxed" style={{ color: COLORS.gray700 }}>
-          <p className="text-gray-400 text-xs mb-4">最終更新日：2025年1月1日</p>
-          
+          <p className="text-gray-400 text-xs mb-4">最終更新日：2026年7月6日</p>
+
           <p className="mb-4">のれん診断（以下「本サービス」）の運営者は、ユーザーのプライバシーを尊重し、個人情報の保護に最大限努めます。本プライバシーポリシーでは、本サービスにおける情報の取り扱いについて説明します。</p>
-          
+
           <h2 className="text-base font-bold mt-6 mb-3" style={{ color: COLORS.primaryDark }}>1. 収集する情報</h2>
           <p className="mb-2">本サービスでは、以下の情報を取り扱います。</p>
           <ul className="list-disc pl-5 mb-4 space-y-1">
             <li><strong>診断入力情報：</strong>店舗数、年商、営業利益、業態等の診断に必要な情報</li>
             <li><strong>アクセス情報：</strong>IPアドレス、ブラウザ種別、アクセス日時等の技術的情報</li>
+            <li><strong>フォーム入力情報：</strong>本サービスが相談・紹介申込等のフォームを設置する場合に、ユーザーが自ら入力する情報（ニックネーム、メールアドレス、店舗の状況、相談・申込内容等）。フォームを利用された場合にのみ取得します</li>
           </ul>
           
           <h2 className="text-base font-bold mt-6 mb-3" style={{ color: COLORS.primaryDark }}>2. 情報の保存について</h2>
@@ -884,15 +905,20 @@ const PrivacyPage = ({ onBack }) => (
           </ul>
           
           <h2 className="text-base font-bold mt-6 mb-3" style={{ color: COLORS.primaryDark }}>3. アクセス解析について</h2>
-          <p className="mb-2">本サービスでは、サービス改善のためにアクセス解析ツールを使用する場合があります。</p>
+          <p className="mb-2">本サービスでは、サービス改善のためにアクセス解析ツール「Google Analytics 4」（Google LLC 提供）を使用しています。</p>
           <ul className="list-disc pl-5 mb-4 space-y-1">
-            <li>収集されるデータは統計情報であり、個人を特定するものではありません</li>
-            <li>アクセス解析により収集されるのは、訪問回数、閲覧ページ、利用デバイス等の匿名化された情報です</li>
+            <li>Google Analytics は Cookie 等を利用して利用状況（訪問回数、閲覧ページ、診断の進行状況、利用デバイス等）を収集しますが、運営者が個人を特定するものではありません</li>
             <li>これらの情報は、サービスの利用状況の把握と改善にのみ使用されます</li>
+            <li>データの取り扱いの詳細は Google のプライバシーポリシーをご確認ください。Google Analytics オプトアウトアドオンにより無効化することもできます</li>
           </ul>
-          
+
           <h2 className="text-base font-bold mt-6 mb-3" style={{ color: COLORS.primaryDark }}>4. 第三者への提供</h2>
-          <p className="mb-4">本サービスでは、ユーザーの情報を第三者に提供、販売、賃貸することはありません。ただし、法令に基づく開示請求があった場合は、この限りではありません。</p>
+          <p className="mb-2">本サービスでは、ユーザーの情報を、ご本人の同意なく第三者に提供、販売、賃貸することはありません。ただし、以下の場合を除きます。</p>
+          <ul className="list-disc pl-5 mb-4 space-y-1">
+            <li>フォームにおいて、提携事業者（店舗買取・M&A支援等）からの連絡・紹介を希望し、入力内容を提携事業者へ提供することにご本人が同意された場合（同意された方の情報のみを、紹介に必要な範囲で提供します）</li>
+            <li>法令に基づく開示請求があった場合</li>
+          </ul>
+          <p className="mb-4">なお、提携事業者への紹介が成立した場合、運営者が提携事業者から紹介料等の対価を受け取ることがあります。</p>
           
           <h2 className="text-base font-bold mt-6 mb-3" style={{ color: COLORS.primaryDark }}>5. セキュリティ</h2>
           <p className="mb-4">本サービスは、SSL/TLS暗号化通信を使用し、ユーザーとサービス間の通信を保護しています。</p>
@@ -960,8 +986,19 @@ const LoadingScreen = ({ message = '計算中...' }) => (
 // ========================================
 // Utility
 // ========================================
-const formatNumber = (num) => (num === '' || num === null || num === undefined) ? '' : Number(num).toLocaleString();
-const parseFormattedNumber = (str) => str ? str.replace(/,/g, '') : '';
+// 負数（営業利益の赤字入力）対応: 入力途中の「-」を保持し、NaN表示を防ぐ
+const formatNumber = (num) => {
+  if (num === '' || num === null || num === undefined) return '';
+  if (num === '-') return '-';
+  const n = Number(num);
+  return Number.isNaN(n) ? '' : n.toLocaleString();
+};
+const parseFormattedNumber = (str) => {
+  if (!str) return '';
+  const cleaned = str.replace(/[^\d-]/g, '');
+  // 先頭以外のマイナス記号を除去（例: "1-2" → "12"、"-1-2" → "-12"）
+  return cleaned.charAt(0) === '-' ? '-' + cleaned.slice(1).replace(/-/g, '') : cleaned.replace(/-/g, '');
+};
 const formatCurrency = (value) => {
   if (value >= 100000000) return `${(value / 100000000).toFixed(1)}億円`;
   if (value >= 10000) return `${Math.round(value / 10000).toLocaleString()}万円`;
@@ -1004,7 +1041,7 @@ const SimpleDiagnosis = ({ onComplete, onBack }) => {
     { id: 'profitMargin', title: '営業利益率', category: '利益', subtitle: '売上に対する利益の割合', note: () => '不明な場合は「平均的」を選択', options: [{ value: -15, label: '大幅赤字（-10%以下）' }, { value: -5, label: '赤字（-10〜0%）' }, { value: 1.5, label: 'ほぼ収支均衡（0〜3%）' }, { value: 4, label: 'やや低め（3〜5%）' }, { value: 6.5, label: '平均的（5〜8%）' }, { value: 10, label: '良好（8〜12%）' }, { value: 15, label: '優秀（12%以上）' }] },
     { id: 'stability', title: '売上の推移', category: '成長性', subtitle: '過去2〜3年の傾向', options: [{ value: 1.0, label: '大幅増加（年15%以上）' }, { value: 0.6, label: '増加傾向（年10〜15%）' }, { value: 0.3, label: 'やや増加（年5〜10%）' }, { value: 0, label: '横ばい（±5%程度）' }, { value: -0.4, label: 'やや減少（年5〜10%減）' }, { value: -0.7, label: '減少傾向（年10%以上減）' }] },
     { id: 'years', title: '営業年数', category: '実績', subtitle: '現業態での営業期間', note: (sc) => sc > 1 ? '1号店を基準' : null, options: [{ value: -0.7, label: '1年未満' }, { value: -0.3, label: '1〜2年' }, { value: 0, label: '2〜3年' }, { value: 0.3, label: '3〜5年' }, { value: 0.5, label: '5〜7年' }, { value: 0.6, label: '7〜10年' }, { value: 0.7, label: '10〜15年' }, { value: 0.8, label: '15年以上' }] },
-    { id: 'ownerDependency', title: 'オーナーの関与度', category: '経営体制', subtitle: '不在でも運営できるか', options: [{ value: -0.8, label: '毎日の稼働が必須' }, { value: -0.5, label: '週5〜6日の出勤' }, { value: -0.2, label: '週3〜4日の出勤' }, { value: 0.3, label: '週1〜2日の出勤' }, { value: 0.6, label: 'ほぼ不要' }] },
+    { id: 'ownerDependency', title: 'オーナーの関与度', category: '経営体制', subtitle: '不在でも運営できるか', options: [{ value: -1.3, label: '毎日の稼働が必須' }, { value: -0.8, label: '週5〜6日の出勤' }, { value: -0.2, label: '週3〜4日の出勤' }, { value: 0.3, label: '週1〜2日の出勤' }, { value: 0.6, label: 'ほぼ不要' }] },
     { id: 'employees', title: '従業員数', category: '人員体制', subtitle: 'パート・アルバイト含む', note: (sc) => sc > 1 ? '全店舗の合計' : null, options: [{ value: 0.7, label: '0人（ひとりで運営）' }, { value: 0.9, label: '1人' }, { value: 1.0, label: '2〜3人' }, { value: 1.1, label: '4〜5人' }, { value: 1.15, label: '6〜8人' }, { value: 1.2, label: '9〜12人' }, { value: 1.25, label: '13人以上' }] },
   ];
 
@@ -1113,7 +1150,7 @@ const DetailedDiagnosis = ({ onComplete, onBack }) => {
                   直接入力も可能です
                 </p>
                 <div className="relative">
-                  <input type="text" inputMode="numeric" value={formatNumber(formData[currentQ.key]) || ''} onChange={(e) => handleInputChange(parseFormattedNumber(e.target.value))} placeholder={currentQ.placeholder}
+                  <input type="text" inputMode="numeric" aria-label={`${currentQ.question}（${currentQ.unit}）`} value={formatNumber(formData[currentQ.key]) || ''} onChange={(e) => handleInputChange(parseFormattedNumber(e.target.value))} placeholder={currentQ.placeholder}
                     className="w-full px-4 py-3 pr-14 rounded-xl border-2 text-base focus:outline-none" style={{ borderColor: COLORS.gray200 }} onFocus={(e) => e.target.style.borderColor = COLORS.accent} onBlur={(e) => e.target.style.borderColor = COLORS.gray200} />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: COLORS.gray500 }}>{currentQ.unit}</span>
                 </div>
@@ -1161,7 +1198,7 @@ const calculateSimpleValuation = (data) => {
   const goodwill = Math.max(0, operatingProfit * baseMultiple);
   let revenueMultiplier = revenue >= 300000000 ? 1.15 : revenue >= 100000000 ? 1.08 : revenue >= 50000000 ? 1.0 : 0.9;
   const estimatedValue = Math.max(0, goodwill * employees * revenueMultiplier);
-  const minValue = revenue * 0.1;
+  const minValue = revenue * 0.08; // 下限は造作（居抜き）価値の目安。過大な床は期待ギャップの原因になるため保守的に
 
   let percentile = 50;
   if (profitMarginPercent >= 10) percentile += 20;
@@ -1187,7 +1224,8 @@ const calculateDetailedValuation = (data) => {
   let adjustmentFactor = 1.0;
   const trendFactors = { 'growing_high': 1.25, 'growing': 1.15, 'stable': 1.0, 'declining': 0.85 };
   adjustmentFactor *= trendFactors[data.revenueTrend] || 1.0;
-  const ownerFactors = { 'very_low': 1.2, 'low': 1.1, 'medium': 1.0, 'high': 0.9, 'very_high': 0.75 };
+  // オーナー依存が高い店は後任の人件費負担で実質利益が目減りするため、実務では評価が大きく下がる（役員報酬の正常化に相当）
+  const ownerFactors = { 'very_low': 1.2, 'low': 1.1, 'medium': 1.0, 'high': 0.8, 'very_high': 0.55 };
   adjustmentFactor *= ownerFactors[data.ownerDependency] || 1.0;
   if (yearsInBusiness >= 15) adjustmentFactor *= 1.15;
   else if (yearsInBusiness >= 10) adjustmentFactor *= 1.1;
@@ -1205,7 +1243,7 @@ const calculateDetailedValuation = (data) => {
 
   const taxRate = 0.30;
   const nopat = operatingProfit * (1 - taxRate);
-  const wacc = 0.10;
+  const wacc = 0.15; // 小規模飲食のリスクプレミアムを反映（10%では零細事業に対し過大評価になる）
   const growthRate = 0.005;
   let dcfValue = 0;
   for (let t = 1; t <= 5; t++) dcfValue += (nopat * Math.pow(1 + growthRate, t)) / Math.pow(1 + wacc, t);
@@ -1218,12 +1256,13 @@ const calculateDetailedValuation = (data) => {
   const netAssetValue = Math.max(0, (netAsset + goodwill) * adjustmentFactor);
 
   const ebitda = operatingProfit + estimatedDepreciation;
-  let multipleValue = operatingProfit > 0 ? ebitda * industryMultiple * adjustmentFactor : annualRevenue * 0.4 * adjustmentFactor;
+  // 赤字・収支均衡の店は事業価値がつきにくく、実際は居抜き（造作譲渡）相場に収束することが多い（旧: 年商×0.4は過大）
+  let multipleValue = operatingProfit > 0 ? ebitda * industryMultiple * adjustmentFactor : annualRevenue * 0.12 * adjustmentFactor;
   multipleValue = Math.max(0, multipleValue);
 
-  // 加重平均で推定売却価格を算出
-  let totalValue = operatingProfit > 0 ? dcfValue * 0.4 + netAssetValue * 0.3 + multipleValue * 0.3 : netAssetValue * 0.5 + multipleValue * 0.5;
-  totalValue = Math.max(annualRevenue * 0.08, totalValue);
+  // 加重平均で推定売却価格を算出（小規模M&Aの実務は年買法=時価純資産+営業権が主流のため、純資産法の比重を高くDCFを抑える）
+  let totalValue = operatingProfit > 0 ? dcfValue * 0.25 + netAssetValue * 0.45 + multipleValue * 0.3 : netAssetValue * 0.5 + multipleValue * 0.5;
+  totalValue = Math.max(annualRevenue * 0.05, totalValue);
 
   // レンジは推定売却価格（totalValue）ベースで計算（矛盾を防ぐ）
   const lowValue = Math.round(totalValue * 0.85);
@@ -1254,11 +1293,12 @@ const calculateDetailedValuation = (data) => {
   };
 };
 
+// 入力された収益性・成長性にもとづく参考コメント（統計データによるランキングではない）
 const getEvaluationComment = (percentile) => {
-  if (percentile >= 75) return { text: '買い手から高い関心が期待できる水準', color: COLORS.success };
-  if (percentile >= 55) return { text: '売却交渉を有利に進められる水準', color: COLORS.success };
-  if (percentile >= 35) return { text: '市場での売却が十分に見込める水準', color: COLORS.accent };
-  return { text: '条件次第で売却の可能性がある水準', color: COLORS.gray500 };
+  if (percentile >= 75) return { text: '収益性・成長性の入力値は比較的良好です（参考）', color: COLORS.success };
+  if (percentile >= 55) return { text: '収益性・成長性の入力値は標準よりやや良好です（参考）', color: COLORS.success };
+  if (percentile >= 35) return { text: '収益性・成長性の入力値は標準的です（参考）', color: COLORS.accent };
+  return { text: '収益性・成長性の入力値には改善余地があります（参考）', color: COLORS.gray500 };
 };
 
 // ========================================
@@ -1313,13 +1353,13 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
   const handleLineShare = () => {
     trackEvent('share', { method: 'line', diagnosis_type: method });
     const text = encodeURIComponent(`【のれん診断結果】推定売却価格: ${formatCurrency(mid)}\n飲食店の売却価格を無料で診断👉`);
-    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.vercel.app')}&text=${text}`, '_blank');
+    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent('https://noren-shindan.vercel.app')}&text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleXShare = () => {
     trackEvent('share', { method: 'x', diagnosis_type: method });
     const text = encodeURIComponent(`飲食店の売却価格を診断してみた！推定売却価格: ${formatCurrency(mid)}\n無料で診断できる👉`);
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.vercel.app')}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://noren-shindan.vercel.app')}`, '_blank', 'noopener,noreferrer');
   };
 
   // 無料相談CTA（CONSULT_FORM.baseUrl 未設定の間は非表示）
@@ -1353,10 +1393,13 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
             <span className="text-sm font-medium" style={{ color: evaluation.color }}>{evaluation.text}</span>
           </div>
 
-          <p className="text-center text-sm mb-2" style={{ color: COLORS.gray600 }}>推定売却価格</p>
-          <div className="text-center mb-6">
+          <p className="text-center text-sm mb-2" style={{ color: COLORS.gray600 }}>推定売却価格（参考値）</p>
+          <div className="text-center mb-3">
             <span className="text-4xl sm:text-5xl font-bold" style={{ color: COLORS.primary, fontFamily: "'Noto Serif JP', serif" }}>{formatCurrency(mid)}</span>
           </div>
+          <p className="text-xs leading-relaxed text-center mb-6 px-2" style={{ color: COLORS.gray600 }}>
+            ※ 本結果は3つの評価手法にもとづく簡易シミュレーションの参考値です。実際の売却価格は立地・設備・契約条件や売却の方法（居抜き売却・事業譲渡など）で大きく変わり、本結果より低くなる場合もあります。価格を保証するものではありません。
+          </p>
 
           <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: COLORS.gray50 }}>
             <p className="text-center text-sm font-medium mb-4" style={{ color: COLORS.gray700 }}>想定売却価格レンジ</p>
@@ -1384,21 +1427,9 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
               </div>
             </div>
             
-            <div className="flex justify-between mt-3 text-xs" style={{ color: COLORS.gray400 }}>
+            <div className="flex justify-between mt-3 text-xs" style={{ color: COLORS.gray600 }}>
               <span>{formatCurrency(gMin)}</span>
               <span>{formatCurrency(gMax)}</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl mb-5" style={{ backgroundColor: '#eff6ff' }}>
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-xl text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: COLORS.accent }}>
-                <p className="text-lg font-bold">{100 - percentile}%</p>
-              </div>
-              <div>
-                <p className="text-sm font-bold mb-0.5" style={{ color: COLORS.primaryDark }}>評価ランキング：上位 {100 - percentile}%</p>
-                <p className="text-xs" style={{ color: COLORS.gray600 }}>同規模・同業態100店舗中{100 - percentile}番目の評価</p>
-              </div>
             </div>
           </div>
 
@@ -1519,9 +1550,15 @@ const ResultPage = ({ result, onRestart, onDetailedDiagnosis, onRestartDetailed 
 // ========================================
 // Main App
 // ========================================
+// 診断結果の退避・復元（リロードや誤操作の「戻る」で結果が全喪失するのを防ぐ。タブを閉じると消える=サーバー保存なしの方針は維持）
+const RESULT_STORAGE_KEY = 'noren_result_v1';
+const saveResultToSession = (result) => { try { sessionStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result)); } catch { /* プライベートモード等では黙って諦める */ } };
+const loadResultFromSession = () => { try { const s = sessionStorage.getItem(RESULT_STORAGE_KEY); return s ? JSON.parse(s) : null; } catch { return null; } };
+const clearResultFromSession = () => { try { sessionStorage.removeItem(RESULT_STORAGE_KEY); } catch { /* noop */ } };
+
 const NorenDiagnosis = () => {
-  const [view, setView] = useState('landing');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(() => loadResultFromSession());
+  const [view, setView] = useState(() => (loadResultFromSession() ? 'result' : 'landing'));
   const [isLoading, setIsLoading] = useState(false);
 
   const handleStartDiagnosis = () => { 
@@ -1541,6 +1578,7 @@ const NorenDiagnosis = () => {
     // 業態は相談フォームへの引き継ぎ・計測で使うため結果に含める（詳細診断のみ存在）
     const calculatedResult = { ...calculateValuation(data, type), businessType: data.businessType || null };
     setResult(calculatedResult);
+    saveResultToSession(calculatedResult);
     setIsLoading(false);
     setView('result');
     // 診断完了イベント送信（診断タイプと結果金額を含む）
@@ -1555,10 +1593,10 @@ const NorenDiagnosis = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleRestart = () => { setView('landing'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const handleRestartDetailed = () => { setView('detailed'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleRestart = () => { setView('landing'); setResult(null); clearResultFromSession(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleRestartDetailed = () => { setView('detailed'); setResult(null); clearResultFromSession(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handleBackToLanding = () => { setView('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const handleLogoClick = () => { setView('landing'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleLogoClick = () => { setView('landing'); setResult(null); clearResultFromSession(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handleContactClick = () => { setView('contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handleTermsClick = () => { setView('terms'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handlePrivacyClick = () => { setView('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
